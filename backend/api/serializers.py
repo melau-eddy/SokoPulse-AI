@@ -29,9 +29,15 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    stock = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
         fields = "__all__"
+
+    def get_stock(self, obj):
+        inv = obj.inventory_records.first()
+        return inv.quantity_available if inv else 0
 
 
 class InventorySerializer(serializers.ModelSerializer):

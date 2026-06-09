@@ -86,8 +86,19 @@ function InventoryPage() {
       }
     }
     apiClient.getProducts().then((data) => {
-      if (data) {
-        setProducts(data);
+      if (data && data.length > 0) {
+        setProducts(data.map((p: any) => ({
+          id: String(p.id),
+          name: p.product_name,
+          sku: p.sku,
+          category: p.category,
+          stock: p.stock !== undefined ? p.stock : 14,
+          reorderPoint: p.reorder_point || 0,
+          expiry: p.expiry_date || "",
+          status: p.status,
+          supplier: p.supplier || "",
+          price: Number(p.unit_price) || 0,
+        })));
       }
     });
   }, []);
@@ -135,21 +146,31 @@ function InventoryPage() {
     else if (stockNum <= reorderNum) newStatus = "low";
     else if (stockNum >= reorderNum * 4) newStatus = "overstocked";
 
-    const localUpdate = {
-      ...active,
-      name: editForm.name ?? active.name,
+    const payload = {
       sku: editForm.sku ?? active.sku,
+      product_name: editForm.name ?? active.name,
       category: editForm.category ?? active.category,
-      stock: isNaN(stockNum) ? active.stock : stockNum,
-      reorderPoint: isNaN(reorderNum) ? active.reorderPoint : reorderNum,
-      expiry: editForm.expiry ?? active.expiry,
-      supplier: editForm.supplier ?? active.supplier,
-      price: Number(editForm.price) || active.price,
+      unit_price: Number(editForm.price) || active.price,
+      reorder_point: isNaN(reorderNum) ? active.reorderPoint : reorderNum,
+      expiry_date: editForm.expiry || null,
       status: newStatus,
+      supplier: editForm.supplier ?? active.supplier,
     };
 
-    apiClient.updateProduct(active.id, localUpdate).then((serverProd) => {
-      const finalProd = serverProd || localUpdate;
+    apiClient.updateProduct(active.id, payload).then((serverProd) => {
+      const finalProd = serverProd ? {
+        id: String(serverProd.id),
+        name: serverProd.product_name,
+        sku: serverProd.sku,
+        category: serverProd.category,
+        stock: serverProd.stock !== undefined ? serverProd.stock : stockNum,
+        reorderPoint: serverProd.reorder_point || 0,
+        expiry: serverProd.expiry_date || "",
+        status: serverProd.status,
+        supplier: serverProd.supplier || "",
+        price: Number(serverProd.unit_price) || 0,
+      } : { ...active, ...editForm, status: newStatus, stock: stockNum };
+
       setProducts((prev) => prev.map((p) => (p.id === active.id ? finalProd : p)));
       setActive(finalProd);
       setIsEditing(false);
@@ -161,18 +182,23 @@ function InventoryPage() {
     const p = products.find((prod) => prod.id === id);
     if (!p) return;
 
-    // Simulate restock: add restock quantity to stock
-    const restockQty = Math.round(p.reorderPoint * 1.5);
+    const restockQty = Math.round(p.reorderPoint * 1.5) || 100;
     const updatedStock = p.stock + restockQty;
 
-    const localUpdate = {
-      ...p,
-      stock: updatedStock,
-      status: "healthy" as const,
-    };
-
     apiClient.restockProduct(id).then((serverProd) => {
-      const finalProd = serverProd || localUpdate;
+      const finalProd = serverProd ? {
+        id: String(serverProd.id),
+        name: serverProd.product_name,
+        sku: serverProd.sku,
+        category: serverProd.category,
+        stock: serverProd.stock !== undefined ? serverProd.stock : updatedStock,
+        reorderPoint: serverProd.reorder_point || 0,
+        expiry: serverProd.expiry_date || "",
+        status: serverProd.status,
+        supplier: serverProd.supplier || "",
+        price: Number(serverProd.unit_price) || 0,
+      } : { ...p, stock: updatedStock, status: "healthy" as const };
+
       setProducts((prev) => prev.map((prod) => (prod.id === id ? finalProd : prod)));
       setActive(finalProd);
 
