@@ -109,7 +109,8 @@ function DashboardPage() {
 
   const handleRefresh = () => {
     setIsLoading(true);
-    apiClient.triggerCompetitorScrape().then(() => {
+    const industry = typeof window !== "undefined" ? localStorage.getItem("sokopulse_industry") || "Industrial" : "Industrial";
+    apiClient.triggerCompetitorScrape(industry).then(() => {
       fetchDashboardData();
       toast.success("AI insights and market telemetry refreshed.");
     }).catch(() => {

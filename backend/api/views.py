@@ -178,7 +178,10 @@ class CompetitorsView(APIView):
     def get(self, request):
         # 1. Competitor objects
         competitors_list = []
-        competitor_names = ["GlobalLogix", "Nexus Supply Pro", "Apex Trading Co.", "Meridian Imports"]
+        competitor_names = list(CompetitorData.objects.values_list("competitor_name", flat=True).distinct())
+        if not competitor_names:
+            competitor_names = ["GlobalLogix", "Nexus Supply Pro", "Apex Trading Co.", "Meridian Imports"]
+            
         shares = [28, 19, 14, 11]
         trends = ["up", "flat", "up", "down"]
         
@@ -190,9 +193,9 @@ class CompetitorsView(APIView):
             competitors_list.append({
                 "id": f"c{i+1}",
                 "name": name,
-                "marketShare": shares[i],
-                "avgPrice": float(avg_price) if avg_price > 0 else (1289 if name == "GlobalLogix" else 1199),
-                "trend": trends[i],
+                "marketShare": shares[i] if i < len(shares) else 15,
+                "avgPrice": float(avg_price) if avg_price > 0 else 1199,
+                "trend": trends[i] if i < len(trends) else "flat",
                 "monitored": monitored_skus if monitored_skus > 0 else 10,
             })
             
@@ -233,7 +236,8 @@ class CompetitorsView(APIView):
     def post(self, request):
         from api.scrapers.crawler import scrape_competitor_prices
         try:
-            scrape_competitor_prices()
+            industry = request.data.get("industry")
+            scrape_competitor_prices(industry=industry)
             return self.get(request)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

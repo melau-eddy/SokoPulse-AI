@@ -66,9 +66,10 @@ export const apiClient = {
 
   // Competitors
   getCompetitors: async () => safeFetch<any>("/competitors/"),
-  triggerCompetitorScrape: async () =>
+  triggerCompetitorScrape: async (industry?: string) =>
     safeFetch<any>("/competitors/", {
       method: "POST",
+      body: JSON.stringify({ industry }),
     }),
 
   // Forecasting

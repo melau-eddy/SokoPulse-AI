@@ -6,10 +6,19 @@ from api.ml.forecaster import run_intelligence_pipeline
 class Command(BaseCommand):
     help = "Triggers the competitor price scraper, updates forecasting models, and generates AI replenishment recommendations."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--industry",
+            type=str,
+            default="Industrial",
+            help="Define the line of business/industry target for scraping",
+        )
+
     def handle(self, *args, **options):
-        self.stdout.write("🕸️ 1. Dispatching Competitor Pricing Crawler...")
+        industry = options.get("industry", "Industrial")
+        self.stdout.write(f"🕸️ 1. Dispatching Competitor Pricing Crawler for {industry}...")
         try:
-            scrape_competitor_prices()
+            scrape_competitor_prices(industry=industry)
             self.stdout.write(self.style.SUCCESS("Scraper observations logged successfully."))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Scraper job failed: {e}"))

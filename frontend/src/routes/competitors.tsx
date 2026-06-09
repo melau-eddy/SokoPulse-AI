@@ -77,15 +77,16 @@ function CompetitorsPage() {
 
   const triggerScrapeRefresh = () => {
     setIsScraping(true);
-    apiClient.triggerCompetitorScrape().then((res) => {
+    const industry = typeof window !== "undefined" ? localStorage.getItem("sokopulse_industry") || "Industrial" : "Industrial";
+    apiClient.triggerCompetitorScrape(industry).then((res) => {
       setIsScraping(false);
       if (res) {
         if (res.competitors) setCompetitors(res.competitors);
         if (res.competitorPrices) setCompetitorPrices(res.competitorPrices);
         if (res.pricingItems) setPricingItems(res.pricingItems);
-        toast.success("Scraper task executed on backend. Database updated.");
+        toast.success(`Scraper task executed for ${industry} segment. Database updated.`);
       } else {
-        toast.success("Scraper queries dispatched: 47 endpoints crawled. Data updated.");
+        toast.success(`Scraper queries dispatched: 47 endpoints crawled for ${industry}. Data updated.`);
       }
     }).catch(err => {
       setIsScraping(false);

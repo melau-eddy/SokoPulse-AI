@@ -6,11 +6,18 @@ from datetime import datetime
 
 from api.models import Product, CompetitorData
 
-# Monitored competitor targets
-COMPETITORS = ["GlobalLogix", "Nexus Supply Pro", "Apex Trading Co.", "Meridian Imports"]
+# Monitored competitor targets grouped by industry/line of business
+INDUSTRY_COMPETITORS = {
+    "Electronics": ["GlobalLogix", "Nexus Supply Pro", "Apex Trading Co.", "Meridian Imports"],
+    "Pharmaceuticals": ["PharmaDirect", "BioHealth Solutions", "Medline Corp", "Apex Pharma"],
+    "Retail": ["MegaMart", "ValueSupermarket", "GrocerPlus", "FreshFoods Co"],
+    "Healthcare": ["BioHealth Solutions", "Medline Corp", "Apex Pharma", "CareSupply"],
+    "Construction": ["IndustrialBuild", "IronBridge Castings", "VoltMaterials", "BuildCorp"],
+    "Industrial": ["GlobalLogix", "Nexus Supply Pro", "Apex Trading Co.", "Meridian Imports"]
+}
 
 
-def scrape_competitor_prices():
+def scrape_competitor_prices(industry=None):
     """
     Phase 6: Competitor Intelligence Module.
     Scrapes competitor web catalogs or generates normalized benchmarks for each product.
@@ -20,12 +27,20 @@ def scrape_competitor_prices():
         print("ℹ️ No products registered to compile competitor benchmarks.")
         return
 
+    # Normalize industry input
+    industry_key = "Industrial"
+    if industry:
+        normalized = str(industry).strip().capitalize()
+        if normalized in INDUSTRY_COMPETITORS:
+            industry_key = normalized
+
+    competitors = INDUSTRY_COMPETITORS[industry_key]
     observations_created = 0
 
     for product in products:
         base_price = float(product.unit_price)
 
-        for competitor in COMPETITORS:
+        for competitor in competitors:
             # 1. Simulate scraping a web catalog (e.g. mock search requests)
             url = f"https://mock-scrapers.sokopulse.ai/search?q={product.product_name}&src={competitor}"
             
