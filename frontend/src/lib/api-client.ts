@@ -1,0 +1,87 @@
+// SokoPulse AI - API Client
+// Connects to Node/Express backend on port 5000 with automatic fallback to local mock data.
+
+const API_BASE_URL = "http://localhost:5000/api";
+
+async function safeFetch<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options?.headers || {}),
+      },
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return await res.json() as T;
+  } catch (error) {
+    // Graceful fallback logger
+    console.warn(`Backend connection failed for endpoint ${endpoint}. SokoPulse is running in standalone mock mode.`, error);
+    return null;
+  }
+}
+
+export const apiClient = {
+  // KPIs
+  getKPIs: async () => safeFetch<any>("/kpis"),
+
+  // Products
+  getProducts: async () => safeFetch<any[]>("/products"),
+  updateProduct: async (id: string, data: any) =>
+    safeFetch<any>(`/products/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  restockProduct: async (id: string) =>
+    safeFetch<any>(`/products/${id}/restock`, {
+      method: "POST",
+    }),
+
+  // Competitors
+  getCompetitors: async () => safeFetch<any>("/competitors/"),
+  triggerCompetitorScrape: async () =>
+    safeFetch<any>("/competitors/", {
+      method: "POST",
+    }),
+
+  // Forecasting
+  getForecasting: async () => safeFetch<any>("/forecasting"),
+
+  // Dynamic Pricing
+  getPricing: async () => safeFetch<any[]>("/pricing"),
+  updateRecommendationStatus: async (id: string, status: string, overrideData?: any) =>
+    safeFetch<any>(`/recommendations/${id}/update_status/`, {
+      method: "PUT",
+      body: JSON.stringify({ status, ...overrideData }),
+    }),
+
+  // Procurement
+  getProcurement: async () => safeFetch<any[]>("/procurement"),
+  getPurchaseOrders: async () => safeFetch<any[]>("/purchase-orders/"),
+  createPurchaseOrder: async (data: any) =>
+    safeFetch<any>("/purchase-orders/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  // Sales
+  getSales: async () => safeFetch<any[]>("/sales/"),
+
+  // Inventory
+  getInventory: async () => safeFetch<any[]>("/inventory/"),
+
+  // Suppliers
+  getSuppliers: async () => safeFetch<any[]>("/suppliers/"),
+
+  // Alerts
+  getAlerts: async () => safeFetch<any[]>("/alerts/"),
+  resolveAlert: async (id: string, resolved: boolean) =>
+    safeFetch<any>(`/alerts/${id}/resolve/`, {
+      method: "PUT",
+      body: JSON.stringify({ resolved }),
+    }),
+  simulateAlert: async () =>
+    safeFetch<any>("/alerts/simulate/", {
+      method: "POST",
+    }),
+};

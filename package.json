@@ -1,0 +1,14 @@
+{
+  "name": "sokopulse-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix frontend && python3 -m venv backend/venv && backend/venv/bin/pip install -r backend/requirements.txt",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "backend/venv/bin/python backend/manage.py runserver 5000",
+    "dev": "npm run dev:backend & npm run dev:frontend",
+    "build:frontend": "npm run build --prefix frontend",
+    "seed:backend": "backend/venv/bin/python backend/manage.py migrate && backend/venv/bin/python backend/manage.py seed_db && backend/venv/bin/python backend/manage.py run_pipeline",
+    "pipeline:backend": "backend/venv/bin/python backend/manage.py run_pipeline"
+  }
+}
