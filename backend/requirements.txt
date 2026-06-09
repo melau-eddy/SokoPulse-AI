@@ -12,4 +12,7 @@ google-generativeai
 drf-spectacular
 gunicorn
 psycopg2-binary
+celery
+redis
+
 

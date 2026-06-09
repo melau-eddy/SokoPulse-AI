@@ -141,3 +141,22 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+# Celery configurations
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+
+CELERY_BEAT_SCHEDULE = {
+    "scrape-competitors-every-4h": {
+        "task": "api.tasks.scrape_competitors_task",
+        "schedule": 14400.0,  # 4 hours in seconds
+    },
+    "retrain-forecaster-daily": {
+        "task": "api.tasks.retrain_forecaster_task",
+        "schedule": 86400.0,  # 24 hours in seconds
+    },
+}

@@ -234,10 +234,10 @@ class CompetitorsView(APIView):
         })
 
     def post(self, request):
-        from api.scrapers.crawler import scrape_competitor_prices
+        from api.tasks import scrape_competitors_task
         try:
             industry = request.data.get("industry")
-            scrape_competitor_prices(industry=industry)
+            scrape_competitors_task.delay(industry=industry)
             return self.get(request)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
