@@ -17,8 +17,19 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const [confidence, setConfidence] = useState([85]);
-  const [autopilot, setAutopilot] = useState(false);
+  const [confidence, setConfidence] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sokopulse_confidence");
+      return saved ? [parseInt(saved)] : [85];
+    }
+    return [85];
+  });
+  const [autopilot, setAutopilot] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sokopulse_autopilot") === "true";
+    }
+    return false;
+  });
 
   return (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto">
@@ -72,7 +83,13 @@ function SettingsPage() {
             />
             <Toggle label="Auto-apply pricing adjustments" desc="≤ 5% changes are applied automatically." defaultChecked />
             <Toggle label="Auto-create POs for critical stock-outs" desc="Requires verified supplier match." />
-            <Save />
+            <div className="pt-2 flex justify-end">
+              <Button onClick={() => {
+                localStorage.setItem("sokopulse_confidence", confidence[0].toString());
+                localStorage.setItem("sokopulse_autopilot", autopilot ? "true" : "false");
+                toast.success("AI Automation thresholds saved successfully!");
+              }}>Save AI Changes</Button>
+            </div>
           </SectionCard>
         </TabsContent>
 

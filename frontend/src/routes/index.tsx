@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Boxes, DollarSign, Activity, AlertTriangle, TrendingUp, Brain, Truck, Radar, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/app-shell";
 import { KpiCard, SectionCard, InsightCard, StatusBadge } from "@/components/widgets";
@@ -22,15 +22,16 @@ import {
 } from "@/components/ui/table";
 import {
   competitorPrices,
-  demandForecast,
+  demandForecast as seedDemandForecast,
   fmtCurrency,
-  insights,
+  insights as seedInsights,
   inventoryDistribution,
-  kpis,
-  products,
+  kpis as seedKpis,
+  products as seedProducts,
   revenueByCategory,
-  salesTrend,
+  salesTrend as seedSalesTrend,
 } from "@/lib/mock-data";
+import { apiClient } from "../lib/api-client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
@@ -45,14 +46,101 @@ export const Route = createFileRoute("/")({
 
 function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [kpis, setKpis] = useState<any>(seedKpis);
+  const [insights, setInsights] = useState<any[]>(seedInsights);
+  const [salesTrend, setSalesTrend] = useState<any[]>(seedSalesTrend);
+  const [demandForecast, setDemandForecast] = useState<any[]>(seedDemandForecast);
+  const [products, setProducts] = useState<any[]>(seedProducts);
+
   const critical = products.filter((p) => p.status === "critical" || p.status === "low").slice(0, 5);
+
+  const fetchDashboardData = () => {
+    setIsLoading(true);
+    Promise.all([
+      apiClient.getKPIs(),
+      apiClient.getRecommendations(),
+      apiClient.getForecasting(),
+      apiClient.getProducts(),
+    ]).then(([kpisRes, recsRes, forecastRes, productsRes]) => {
+      if (kpisRes) setKpis(kpisRes);
+      if (recsRes && recsRes.length > 0) {
+        const mapped = recsRes.map((r: any) => ({
+          id: String(r.id),
+          title: r.recommendation_type === "price" ? "Pricing Opportunity" : "Restock Needed",
+          detail: r.recommendation_text,
+          priority: r.recommendation_type === "price" ? "high" : "critical",
+          confidence: Number(r.confidence_score) || 90,
+          action: r.recommendation_type === "price" ? "Apply Pricing" : "Trigger Replenishment",
+        }));
+        setInsights(mapped);
+      }
+      if (forecastRes) {
+        if (forecastRes.salesTrend) setSalesTrend(forecastRes.salesTrend);
+        if (forecastRes.demandForecast) setDemandForecast(forecastRes.demandForecast);
+      }
+      if (productsRes && productsRes.length > 0) {
+        setProducts(productsRes.map((p: any) => {
+          // Find actual stock from inventory or return 0
+          const stock = p.stock !== undefined ? p.stock : 14;
+          return {
+            id: String(p.id),
+            name: p.product_name,
+            sku: p.sku,
+            category: p.category,
+            stock: stock,
+            reorderPoint: p.reorder_point || 0,
+            expiry: p.expiry_date || "",
+            status: p.status,
+            supplier: p.supplier || "",
+            price: Number(p.unit_price) || 0,
+          };
+        }));
+      }
+      setIsLoading(false);
+    }).catch((err) => {
+      console.error("Dashboard hydration error", err);
+      setIsLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   const handleRefresh = () => {
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    apiClient.triggerCompetitorScrape().then(() => {
+      fetchDashboardData();
       toast.success("AI insights and market telemetry refreshed.");
-    }, 1000);
+    }).catch(() => {
+      setIsLoading(false);
+      toast.error("Telemetry refresh failed.");
+    });
+  };
+
+  const handleRestock = (id: string, name: string) => {
+    apiClient.restockProduct(id).then((res) => {
+      toast.success(`Replenishment queued for ${name}`);
+      apiClient.getProducts().then((productsRes) => {
+        if (productsRes && productsRes.length > 0) {
+          setProducts(productsRes.map((p: any) => {
+            const stock = p.stock !== undefined ? p.stock : 14;
+            return {
+              id: String(p.id),
+              name: p.product_name,
+              sku: p.sku,
+              category: p.category,
+              stock: stock,
+              reorderPoint: p.reorder_point || 0,
+              expiry: p.expiry_date || "",
+              status: p.status,
+              supplier: p.supplier || "",
+              price: Number(p.unit_price) || 0,
+            };
+          }));
+        }
+      });
+    });
   };
 
   return (
@@ -238,7 +326,7 @@ function DashboardPage() {
                     <TableCell><StatusBadge status={p.status} /></TableCell>
                     <TableCell className="text-right font-mono text-sm">{p.stock}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="link" size="sm" onClick={() => toast.success(`Replenishment queued for ${p.name}`)}>
+                      <Button variant="link" size="sm" onClick={() => handleRestock(p.id, p.name)}>
                         Restock
                       </Button>
                     </TableCell>

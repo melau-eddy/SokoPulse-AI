@@ -5,10 +5,17 @@ const API_BASE_URL = "http://localhost:5000/api";
 
 async function safeFetch<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
   try {
+    const token = typeof window !== "undefined" ? localStorage.getItem("sokopulse_token") : null;
+    const authHeaders: Record<string, string> = {};
+    if (token) {
+      authHeaders["Authorization"] = `Bearer ${token}`;
+    }
+
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders,
         ...(options?.headers || {}),
       },
     });
@@ -23,7 +30,7 @@ async function safeFetch<T>(endpoint: string, options?: RequestInit): Promise<T 
 
 export const apiClient = {
   // KPIs
-  getKPIs: async () => safeFetch<any>("/kpis"),
+  getKPIs: async () => safeFetch<any>("/dashboard/kpis/"),
 
   // Products
   getProducts: async () => safeFetch<any[]>("/products"),
@@ -49,6 +56,7 @@ export const apiClient = {
 
   // Dynamic Pricing
   getPricing: async () => safeFetch<any[]>("/pricing"),
+  getRecommendations: async () => safeFetch<any[]>("/recommendations/"),
   updateRecommendationStatus: async (id: string, status: string, overrideData?: any) =>
     safeFetch<any>(`/recommendations/${id}/update_status/`, {
       method: "PUT",
