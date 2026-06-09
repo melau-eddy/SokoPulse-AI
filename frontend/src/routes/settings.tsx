@@ -60,7 +60,9 @@ function SettingsPage() {
   });
   const [industry, setIndustry] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("sokopulse_industry") || "Industrial Distribution";
+      return (
+        localStorage.getItem("sokopulse_industry") || "Industrial Distribution"
+      );
     }
     return "Industrial Distribution";
   });
@@ -72,7 +74,9 @@ function SettingsPage() {
   });
   const [timezone, setTimezone] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("sokopulse_timezone") || "UTC+03:00 — Nairobi";
+      return (
+        localStorage.getItem("sokopulse_timezone") || "UTC+03:00 — Nairobi"
+      );
     }
     return "UTC+03:00 — Nairobi";
   });
@@ -86,7 +90,10 @@ function SettingsPage() {
   });
   const [competitorUrls, setCompetitorUrls] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("sokopulse_competitor_urls") || "globallogix.com, nexussupply.io, apextrading.co";
+      return (
+        localStorage.getItem("sokopulse_competitor_urls") ||
+        "globallogix.com, nexussupply.io, apextrading.co"
+      );
     }
     return "globallogix.com, nexussupply.io, apextrading.co";
   });
@@ -107,7 +114,10 @@ function SettingsPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto">
-      <PageHeader title="Settings" description="Manage your account, organization, AI thresholds, and integrations." />
+      <PageHeader
+        title="Settings"
+        description="Manage your account, organization, AI thresholds, and integrations."
+      />
 
       <Tabs defaultValue="profile">
         <TabsList className="mb-6 flex flex-wrap">
@@ -121,69 +131,121 @@ function SettingsPage() {
         </TabsList>
 
         <TabsContent value="profile">
-          <SectionCard title="User Profile" description="Personal account information.">
+          <SectionCard
+            title="User Profile"
+            description="Personal account information."
+          >
             <div className="grid gap-1.5">
               <Label htmlFor="profile-fullname">Full name</Label>
-              <Input id="profile-fullname" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <Input
+                id="profile-fullname"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5 mt-4">
               <Label htmlFor="profile-email">Email</Label>
-              <Input id="profile-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input
+                id="profile-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5 mt-4">
               <Label htmlFor="profile-role">Role</Label>
-              <Input id="profile-role" value={role} onChange={(e) => setRole(e.target.value)} />
+              <Input
+                id="profile-role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              />
             </div>
             <div className="pt-4 flex justify-end">
-              <Button onClick={() => {
-                localStorage.setItem("sokopulse_user", fullName);
-                localStorage.setItem("sokopulse_email", email);
-                localStorage.setItem("sokopulse_role", role);
-                window.dispatchEvent(new Event("profile-updated"));
-                toast.success("Profile saved successfully!");
-              }}>Save Profile</Button>
+              <Button
+                onClick={() => {
+                  localStorage.setItem("sokopulse_user", fullName);
+                  localStorage.setItem("sokopulse_email", email);
+                  localStorage.setItem("sokopulse_role", role);
+                  window.dispatchEvent(new Event("profile-updated"));
+                  toast.success("Profile saved successfully!");
+                }}
+              >
+                Save Profile
+              </Button>
             </div>
           </SectionCard>
         </TabsContent>
 
         <TabsContent value="org">
-          <SectionCard title="Organization" description="Company details and locale.">
+          <SectionCard
+            title="Organization"
+            description="Company details and locale."
+          >
             <div className="grid gap-1.5">
               <Label htmlFor="org-name">Organization name</Label>
-              <Input id="org-name" value={orgName} onChange={(e) => setOrgName(e.target.value)} />
+              <Input
+                id="org-name"
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5 mt-4">
               <Label htmlFor="org-industry">Industry</Label>
-              <Input id="org-industry" value={industry} onChange={(e) => setIndustry(e.target.value)} />
+              <Input
+                id="org-industry"
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5 mt-4">
               <Label htmlFor="org-currency">Default currency</Label>
-              <Input id="org-currency" value={currency} onChange={(e) => setCurrency(e.target.value)} />
+              <Input
+                id="org-currency"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5 mt-4">
               <Label htmlFor="org-timezone">Timezone</Label>
-              <Input id="org-timezone" value={timezone} onChange={(e) => setTimezone(e.target.value)} />
+              <Input
+                id="org-timezone"
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+              />
             </div>
             <div className="pt-4 flex justify-end">
-              <Button onClick={() => {
-                localStorage.setItem("sokopulse_org", orgName);
-                localStorage.setItem("sokopulse_industry", industry);
-                localStorage.setItem("sokopulse_currency", currency);
-                localStorage.setItem("sokopulse_timezone", timezone);
-                toast.success("Organization details saved!");
-              }}>Save Organization</Button>
+              <Button
+                onClick={() => {
+                  localStorage.setItem("sokopulse_org", orgName);
+                  localStorage.setItem("sokopulse_industry", industry);
+                  localStorage.setItem("sokopulse_currency", currency);
+                  localStorage.setItem("sokopulse_timezone", timezone);
+                  toast.success("Organization details saved!");
+                }}
+              >
+                Save Organization
+              </Button>
             </div>
           </SectionCard>
         </TabsContent>
 
         <TabsContent value="ai">
-          <SectionCard title="AI Automation Thresholds" description="Control when SokoPulse auto-executes vs. recommends.">
+          <SectionCard
+            title="AI Automation Thresholds"
+            description="Control when SokoPulse auto-executes vs. recommends."
+          >
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Auto-approve recommendations above confidence</Label>
                 <span className="font-mono text-sm">{confidence[0]}%</span>
               </div>
-              <Slider value={confidence} onValueChange={setConfidence} min={50} max={100} step={1} />
+              <Slider
+                value={confidence}
+                onValueChange={setConfidence}
+                min={50}
+                max={100}
+                step={1}
+              />
             </div>
             <Separator className="my-4" />
             <Toggle
@@ -192,14 +254,31 @@ function SettingsPage() {
               checked={autopilot}
               onChange={setAutopilot}
             />
-            <Toggle label="Auto-apply pricing adjustments" desc="≤ 5% changes are applied automatically." defaultChecked />
-            <Toggle label="Auto-create POs for critical stock-outs" desc="Requires verified supplier match." />
+            <Toggle
+              label="Auto-apply pricing adjustments"
+              desc="≤ 5% changes are applied automatically."
+              defaultChecked
+            />
+            <Toggle
+              label="Auto-create POs for critical stock-outs"
+              desc="Requires verified supplier match."
+            />
             <div className="pt-4 flex justify-end">
-              <Button onClick={() => {
-                localStorage.setItem("sokopulse_confidence", confidence[0].toString());
-                localStorage.setItem("sokopulse_autopilot", autopilot ? "true" : "false");
-                toast.success("AI Automation thresholds saved successfully!");
-              }}>Save AI Changes</Button>
+              <Button
+                onClick={() => {
+                  localStorage.setItem(
+                    "sokopulse_confidence",
+                    confidence[0].toString(),
+                  );
+                  localStorage.setItem(
+                    "sokopulse_autopilot",
+                    autopilot ? "true" : "false",
+                  );
+                  toast.success("AI Automation thresholds saved successfully!");
+                }}
+              >
+                Save AI Changes
+              </Button>
             </div>
           </SectionCard>
         </TabsContent>
@@ -212,47 +291,103 @@ function SettingsPage() {
             <Toggle label="SMS — supplier delays" />
             <Toggle label="Slack — demand spikes" defaultChecked />
             <div className="pt-4 flex justify-end">
-              <Button onClick={() => toast.success("Notification preferences saved")}>Save Notifications</Button>
+              <Button
+                onClick={() => toast.success("Notification preferences saved")}
+              >
+                Save Notifications
+              </Button>
             </div>
           </SectionCard>
         </TabsContent>
 
         <TabsContent value="competitor">
-          <SectionCard title="Competitor Tracking" description="Configure scraping cadence and target sources.">
+          <SectionCard
+            title="Competitor Tracking"
+            description="Configure scraping cadence and target sources."
+          >
             <div className="grid gap-1.5">
               <Label htmlFor="comp-freq">Scrape frequency</Label>
-              <Input id="comp-freq" value={scrapeFreq} onChange={(e) => setScrapeFreq(e.target.value)} />
+              <Input
+                id="comp-freq"
+                value={scrapeFreq}
+                onChange={(e) => setScrapeFreq(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5 mt-4">
               <Label htmlFor="comp-urls">Tracked competitor URLs</Label>
-              <Input id="comp-urls" value={competitorUrls} onChange={(e) => setCompetitorUrls(e.target.value)} />
+              <Input
+                id="comp-urls"
+                value={competitorUrls}
+                onChange={(e) => setCompetitorUrls(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5 mt-4">
-              <Label htmlFor="comp-threshold">Minimum price-change threshold</Label>
-              <Input id="comp-threshold" value={priceChangeThreshold} onChange={(e) => setPriceChangeThreshold(e.target.value)} />
+              <Label htmlFor="comp-threshold">
+                Minimum price-change threshold
+              </Label>
+              <Input
+                id="comp-threshold"
+                value={priceChangeThreshold}
+                onChange={(e) => setPriceChangeThreshold(e.target.value)}
+              />
             </div>
             <div className="pt-4 flex justify-end">
-              <Button onClick={() => {
-                localStorage.setItem("sokopulse_scrape_freq", scrapeFreq);
-                localStorage.setItem("sokopulse_competitor_urls", competitorUrls);
-                localStorage.setItem("sokopulse_price_change_threshold", priceChangeThreshold);
-                toast.success("Competitor settings saved!");
-              }}>Save Competitor Settings</Button>
+              <Button
+                onClick={() => {
+                  localStorage.setItem("sokopulse_scrape_freq", scrapeFreq);
+                  localStorage.setItem(
+                    "sokopulse_competitor_urls",
+                    competitorUrls,
+                  );
+                  localStorage.setItem(
+                    "sokopulse_price_change_threshold",
+                    priceChangeThreshold,
+                  );
+                  toast.success("Competitor settings saved!");
+                }}
+              >
+                Save Competitor Settings
+              </Button>
             </div>
           </SectionCard>
         </TabsContent>
 
         <TabsContent value="api">
-          <SectionCard title="API & Integrations" description="Connect SokoPulse to your ERP, CRM, and warehouse systems.">
+          <SectionCard
+            title="API & Integrations"
+            description="Connect SokoPulse to your ERP, CRM, and warehouse systems."
+          >
             <div className="grid gap-1.5">
               <Label htmlFor="api-key">API key</Label>
-              <Input id="api-key" defaultValue="sk_live_***********************" readOnly />
+              <Input
+                id="api-key"
+                defaultValue="sk_live_***********************"
+                readOnly
+              />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-4">
-              {["SAP", "NetSuite", "Shopify", "Zoho", "QuickBooks", "Slack"].map((i) => (
-                <div key={i} className="rounded-md border border-border p-3 flex items-center justify-between">
+              {[
+                "SAP",
+                "NetSuite",
+                "Shopify",
+                "Zoho",
+                "QuickBooks",
+                "Slack",
+              ].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-md border border-border p-3 flex items-center justify-between"
+                >
                   <span className="text-sm font-medium">{i}</span>
-                  <Button variant="outline" size="sm" onClick={() => toast.success(`Integration request sent for ${i}`)}>Connect</Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      toast.success(`Integration request sent for ${i}`)
+                    }
+                  >
+                    Connect
+                  </Button>
                 </div>
               ))}
             </div>
@@ -265,14 +400,27 @@ function SettingsPage() {
             <Toggle label="Single sign-on (SSO)" />
             <Toggle label="Session activity alerts" defaultChecked />
             <div className="grid gap-1.5 mt-2">
-              <Label htmlFor="security-timeout">Session timeout (minutes)</Label>
-              <Input id="security-timeout" value={sessionTimeout} onChange={(e) => setSessionTimeout(e.target.value)} />
+              <Label htmlFor="security-timeout">
+                Session timeout (minutes)
+              </Label>
+              <Input
+                id="security-timeout"
+                value={sessionTimeout}
+                onChange={(e) => setSessionTimeout(e.target.value)}
+              />
             </div>
             <div className="pt-4 flex justify-end">
-              <Button onClick={() => {
-                localStorage.setItem("sokopulse_session_timeout", sessionTimeout);
-                toast.success("Security settings saved!");
-              }}>Save Security</Button>
+              <Button
+                onClick={() => {
+                  localStorage.setItem(
+                    "sokopulse_session_timeout",
+                    sessionTimeout,
+                  );
+                  toast.success("Security settings saved!");
+                }}
+              >
+                Save Security
+              </Button>
             </div>
           </SectionCard>
         </TabsContent>
@@ -331,7 +479,9 @@ function Toggle({
 function Save() {
   return (
     <div className="pt-2 flex justify-end">
-      <Button onClick={() => toast.success("Settings saved")}>Save changes</Button>
+      <Button onClick={() => toast.success("Settings saved")}>
+        Save changes
+      </Button>
     </div>
   );
 }

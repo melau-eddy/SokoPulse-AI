@@ -1,16 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Info, TrendingDown, TrendingUp, Sparkles, RefreshCw } from "lucide-react";
+import {
+  Info,
+  TrendingDown,
+  TrendingUp,
+  Sparkles,
+  RefreshCw,
+} from "lucide-react";
 import { PageHeader } from "@/components/app-shell";
 import { SectionCard, KpiCard } from "@/components/widgets";
 import { DemandAreaChart, SalesTrendChart } from "@/components/charts";
 import {
-  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { demandForecast as seedForecast, salesTrend as seedTrend } from "@/lib/mock-data";
+import {
+  demandForecast as seedForecast,
+  salesTrend as seedTrend,
+} from "@/lib/mock-data";
 import { apiClient } from "../lib/api-client";
 import { toast } from "sonner";
 
@@ -35,14 +47,14 @@ function ForecastingPage() {
   const [marketingSpend, setMarketingSpend] = useState<number[]>([0]);
   const [marketGrowth, setMarketGrowth] = useState<number[]>([0]);
   const [isSimulating, setIsSimulating] = useState(false);
-  
+
   const [forecast, setForecast] = useState<any[]>(seedForecast);
   const [trend, setTrend] = useState<any[]>(seedTrend);
   const [metrics, setMetrics] = useState({
     accuracy: "94.2%",
     mape: "5.8%",
     confidence: "±8.4%",
-    version: "v3.2.1"
+    version: "v3.2.1",
   });
 
   useEffect(() => {
@@ -54,7 +66,7 @@ function ForecastingPage() {
           accuracy: res.accuracy || "94.2%",
           mape: res.mape || "5.8%",
           confidence: res.confidenceInterval || "±8.4%",
-          version: res.modelVersion || "v3.2.1"
+          version: res.modelVersion || "v3.2.1",
         });
       }
     });
@@ -63,21 +75,24 @@ function ForecastingPage() {
   // Dynamic forecast based on sliders
   const mMultiplier = 1 + marketingSpend[0] * 0.006;
   const gMultiplier = 1 + marketGrowth[0] * 0.012;
-  
+
   const simulatedForecast = forecast.map((item) => {
     if (item.actual === 0) {
       return {
         ...item,
         forecast: Math.round(item.forecast * mMultiplier * gMultiplier),
         upper: Math.round(item.upper * mMultiplier * gMultiplier * 1.05),
-        lower: Math.max(0, Math.round(item.lower * mMultiplier * gMultiplier * 0.95)),
+        lower: Math.max(
+          0,
+          Math.round(item.lower * mMultiplier * gMultiplier * 0.95),
+        ),
       };
     }
     return item;
   });
 
   const simulatedGrowers = defaultGrowers.map((g) => {
-    const factor = (marketingSpend[0] * 0.2 + marketGrowth[0] * 0.5);
+    const factor = marketingSpend[0] * 0.2 + marketGrowth[0] * 0.5;
     return {
       ...g,
       growth: Math.round(g.growth + factor),
@@ -85,7 +100,7 @@ function ForecastingPage() {
   });
 
   const simulatedSlow = defaultSlow.map((s) => {
-    const factor = (marketingSpend[0] * 0.1 + marketGrowth[0] * 0.2);
+    const factor = marketingSpend[0] * 0.1 + marketGrowth[0] * 0.2;
     return {
       ...s,
       growth: Math.round(s.growth + factor),
@@ -109,18 +124,43 @@ function ForecastingPage() {
           title="Demand Forecasting"
           description="Machine learning predictions trained on 24 months of demand signals."
           actions={
-            <Button variant="outline" size="sm" onClick={handleReset} disabled={isSimulating}>
-              <RefreshCw className={`size-3.5 mr-1.5 ${isSimulating ? "animate-spin" : ""}`} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+              disabled={isSimulating}
+            >
+              <RefreshCw
+                className={`size-3.5 mr-1.5 ${isSimulating ? "animate-spin" : ""}`}
+              />
               Reset Simulation
             </Button>
           }
         />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <KpiCard label="Forecast Accuracy (90d)" value={metrics.accuracy} delta="+1.4%" trend="up" accent="primary" />
-          <KpiCard label="MAPE" value={metrics.mape} hint="Mean absolute % error" />
-          <KpiCard label="Confidence Interval" value={metrics.confidence} hint="95% prediction band" />
-          <KpiCard label="Model Version" value={metrics.version} hint="Updated recently" />
+          <KpiCard
+            label="Forecast Accuracy (90d)"
+            value={metrics.accuracy}
+            delta="+1.4%"
+            trend="up"
+            accent="primary"
+          />
+          <KpiCard
+            label="MAPE"
+            value={metrics.mape}
+            hint="Mean absolute % error"
+          />
+          <KpiCard
+            label="Confidence Interval"
+            value={metrics.confidence}
+            hint="95% prediction band"
+          />
+          <KpiCard
+            label="Model Version"
+            value={metrics.version}
+            hint="Updated recently"
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -137,7 +177,9 @@ function ForecastingPage() {
                       </span>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      Forecast band shows 95% confidence interval from the ensemble model. Simulating parameters will shift the future weeks.
+                      Forecast band shows 95% confidence interval from the
+                      ensemble model. Simulating parameters will shift the
+                      future weeks.
                     </TooltipContent>
                   </Tooltip>
                 </span>
@@ -150,7 +192,7 @@ function ForecastingPage() {
 
           {/* Scenario Simulator */}
           <div>
-            <SectionCard 
+            <SectionCard
               title={
                 <span className="flex items-center gap-1.5">
                   <Sparkles className="size-4 text-primary" />
@@ -162,50 +204,62 @@ function ForecastingPage() {
               <div className="space-y-6 py-2">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <LabelWithTooltip 
-                      label="Marketing Campaign Spend" 
+                    <LabelWithTooltip
+                      label="Marketing Campaign Spend"
                       tooltip="Simulates demand generation based on advertising budget increases (+0% to +50%)."
                     />
-                    <span className="font-mono text-xs font-semibold text-primary">+{marketingSpend[0]}%</span>
+                    <span className="font-mono text-xs font-semibold text-primary">
+                      +{marketingSpend[0]}%
+                    </span>
                   </div>
-                  <Slider 
-                    value={marketingSpend} 
-                    onValueChange={setMarketingSpend} 
-                    min={0} 
-                    max={50} 
-                    step={5} 
+                  <Slider
+                    value={marketingSpend}
+                    onValueChange={setMarketingSpend}
+                    min={0}
+                    max={50}
+                    step={5}
                   />
-                  <p className="text-[10px] text-muted-foreground">Increases baseline promotional velocity across products.</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Increases baseline promotional velocity across products.
+                  </p>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <LabelWithTooltip 
-                      label="Market Growth Rate" 
+                    <LabelWithTooltip
+                      label="Market Growth Rate"
                       tooltip="Simulates macroeconomic changes, market expansion, or competitor stock-out scenarios (-10% to +20%)."
                     />
-                    <span className={`font-mono text-xs font-semibold ${marketGrowth[0] >= 0 ? "text-success" : "text-destructive"}`}>
-                      {marketGrowth[0] >= 0 ? "+" : ""}{marketGrowth[0]}%
+                    <span
+                      className={`font-mono text-xs font-semibold ${marketGrowth[0] >= 0 ? "text-success" : "text-destructive"}`}
+                    >
+                      {marketGrowth[0] >= 0 ? "+" : ""}
+                      {marketGrowth[0]}%
                     </span>
                   </div>
-                  <Slider 
-                    value={marketGrowth} 
-                    onValueChange={setMarketGrowth} 
-                    min={-10} 
-                    max={20} 
-                    step={2} 
+                  <Slider
+                    value={marketGrowth}
+                    onValueChange={setMarketGrowth}
+                    min={-10}
+                    max={20}
+                    step={2}
                   />
-                  <p className="text-[10px] text-muted-foreground">Applies an organic growth factor to overall demand curves.</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Applies an organic growth factor to overall demand curves.
+                  </p>
                 </div>
 
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs">
-                  <p className="font-semibold text-primary mb-1">AI Prediction Summary</p>
+                  <p className="font-semibold text-primary mb-1">
+                    AI Prediction Summary
+                  </p>
                   <p className="text-muted-foreground leading-relaxed">
                     Under this scenario, peak demand is estimated to reach{" "}
                     <span className="font-semibold font-mono text-foreground">
                       {Math.round(720 * mMultiplier * gMultiplier)} units
                     </span>{" "}
-                    in Week 8. Recommended safety stock buffers should be adjusted by{" "}
+                    in Week 8. Recommended safety stock buffers should be
+                    adjusted by{" "}
                     <span className="font-semibold font-mono text-foreground">
                       {Math.round((mMultiplier * gMultiplier - 1) * 100)}%
                     </span>{" "}
@@ -218,13 +272,22 @@ function ForecastingPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <SectionCard title="Seasonal Trend" description="Indexed sales over 12 months">
+          <SectionCard
+            title="Seasonal Trend"
+            description="Indexed sales over 12 months"
+          >
             <SalesTrendChart data={trend} />
           </SectionCard>
-          <SectionCard title="Model Summary" description="Ensemble: XGBoost + LSTM + Prophet">
+          <SectionCard
+            title="Model Summary"
+            description="Ensemble: XGBoost + LSTM + Prophet"
+          >
             <div className="space-y-3 text-sm">
               <Row label="Training samples" value="284,902" />
-              <Row label="Features Used" value="48 (Price, Promo, Competitor, Weather, Lagged Demand)" />
+              <Row
+                label="Features Used"
+                value="48 (Price, Promo, Competitor, Weather, Lagged Demand)"
+              />
               <Row label="Validation R²" value="0.917" />
               <Row label="Last retrain" value="2026-06-05" />
               <Row label="Prediction horizon" value="12 weeks" />
@@ -234,32 +297,58 @@ function ForecastingPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SectionCard title="Top-growing Products" description="Highest predicted demand uplift (simulated)">
+          <SectionCard
+            title="Top-growing Products"
+            description="Highest predicted demand uplift (simulated)"
+          >
             <div className="space-y-2">
               {simulatedGrowers.map((g) => (
-                <Card key={g.name} className="p-3 flex items-center justify-between gap-3">
+                <Card
+                  key={g.name}
+                  className="p-3 flex items-center justify-between gap-3"
+                >
                   <div>
                     <p className="text-sm font-medium">{g.name}</p>
-                    <p className="text-xs text-muted-foreground">{g.units.toLocaleString()} units in stock</p>
+                    <p className="text-xs text-muted-foreground">
+                      {g.units.toLocaleString()} units in stock
+                    </p>
                   </div>
-                  <span className={`inline-flex items-center gap-1 text-sm font-mono ${g.growth >= 0 ? "text-success" : "text-destructive"}`}>
-                    <TrendingUp className="size-4" /> {g.growth >= 0 ? "+" : ""}{g.growth}%
+                  <span
+                    className={`inline-flex items-center gap-1 text-sm font-mono ${g.growth >= 0 ? "text-success" : "text-destructive"}`}
+                  >
+                    <TrendingUp className="size-4" /> {g.growth >= 0 ? "+" : ""}
+                    {g.growth}%
                   </span>
                 </Card>
               ))}
             </div>
           </SectionCard>
-          <SectionCard title="Slow-moving Inventory" description="Predicted demand decline (simulated)">
+          <SectionCard
+            title="Slow-moving Inventory"
+            description="Predicted demand decline (simulated)"
+          >
             <div className="space-y-2">
               {simulatedSlow.map((g) => (
-                <Card key={g.name} className="p-3 flex items-center justify-between gap-3">
+                <Card
+                  key={g.name}
+                  className="p-3 flex items-center justify-between gap-3"
+                >
                   <div>
                     <p className="text-sm font-medium">{g.name}</p>
-                    <p className="text-xs text-muted-foreground">{g.units.toLocaleString()} units in stock</p>
+                    <p className="text-xs text-muted-foreground">
+                      {g.units.toLocaleString()} units in stock
+                    </p>
                   </div>
-                  <span className={`inline-flex items-center gap-1 text-sm font-mono ${g.growth >= 0 ? "text-success" : "text-destructive"}`}>
-                    {g.growth >= 0 ? <TrendingUp className="size-4" /> : <TrendingDown className="size-4" />}
-                    {g.growth >= 0 ? "+" : ""}{g.growth}%
+                  <span
+                    className={`inline-flex items-center gap-1 text-sm font-mono ${g.growth >= 0 ? "text-success" : "text-destructive"}`}
+                  >
+                    {g.growth >= 0 ? (
+                      <TrendingUp className="size-4" />
+                    ) : (
+                      <TrendingDown className="size-4" />
+                    )}
+                    {g.growth >= 0 ? "+" : ""}
+                    {g.growth}%
                   </span>
                 </Card>
               ))}
@@ -271,7 +360,13 @@ function ForecastingPage() {
   );
 }
 
-function LabelWithTooltip({ label, tooltip }: { label: string; tooltip: string }) {
+function LabelWithTooltip({
+  label,
+  tooltip,
+}: {
+  label: string;
+  tooltip: string;
+}) {
   return (
     <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
       {label}

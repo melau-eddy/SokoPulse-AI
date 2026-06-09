@@ -31,7 +31,12 @@ export function KpiCard({
   return (
     <Card className="p-5 relative overflow-hidden gap-3">
       {accent && (
-        <span className={cn("absolute left-0 top-4 bottom-4 w-0.5 rounded-full", accentBar[accent])} />
+        <span
+          className={cn(
+            "absolute left-0 top-4 bottom-4 w-0.5 rounded-full",
+            accentBar[accent],
+          )}
+        />
       )}
       <div className="flex items-start justify-between">
         <span className="text-[11px] font-medium tracking-wider uppercase text-muted-foreground">
@@ -78,7 +83,9 @@ export function SectionCard({
           <div>
             {title && <h3 className="text-sm font-semibold">{title}</h3>}
             {description && (
-              <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {description}
+              </p>
             )}
           </div>
           {actions}
@@ -128,7 +135,13 @@ export function StatusBadge({ status }: { status: InventoryStatus }) {
   );
 }
 
-export function InsightCard({ insight, onAction }: { insight: Insight; onAction?: () => void }) {
+export function InsightCard({
+  insight,
+  onAction,
+}: {
+  insight: Insight;
+  onAction?: () => void;
+}) {
   return (
     <div className="rounded-lg border border-border bg-surface-2 p-4 hover:border-primary/40 transition-colors group">
       <div className="flex items-center justify-between mb-2">
@@ -141,7 +154,9 @@ export function InsightCard({ insight, onAction }: { insight: Insight; onAction?
         <Sparkles className="size-3.5 text-primary" />
         {insight.title}
       </h4>
-      <p className="text-xs text-muted-foreground leading-relaxed mb-3">{insight.detail}</p>
+      <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+        {insight.detail}
+      </p>
       <div className="flex items-center gap-2">
         <Progress value={insight.confidence} className="h-1 flex-1" />
       </div>
@@ -157,14 +172,22 @@ export function InsightCard({ insight, onAction }: { insight: Insight; onAction?
   );
 }
 
-export function EmptyState({ title, description }: { title: string; description?: string }) {
+export function EmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description?: string;
+}) {
   return (
     <div className="text-center py-12 px-6">
       <div className="size-12 mx-auto rounded-full bg-muted grid place-items-center mb-4">
         <Sparkles className="size-5 text-muted-foreground" />
       </div>
       <p className="font-medium text-sm">{title}</p>
-      {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+      {description && (
+        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+      )}
     </div>
   );
 }

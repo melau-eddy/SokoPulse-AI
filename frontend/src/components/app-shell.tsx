@@ -21,7 +21,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiClient } from "../lib/api-client";
@@ -91,8 +98,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           if (!token) {
             setShowAuth(true);
           } else {
-            const savedUser = localStorage.getItem("sokopulse_user") || "David Chen";
-            const initials = savedUser.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase();
+            const savedUser =
+              localStorage.getItem("sokopulse_user") || "David Chen";
+            const initials = savedUser
+              .split(" ")
+              .map((n) => n[0])
+              .slice(0, 2)
+              .join("")
+              .toUpperCase();
             setUserInitials(initials || "DC");
           }
         }
@@ -104,7 +117,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     const handleProfileUpdated = () => {
       const savedUser = localStorage.getItem("sokopulse_user") || "David Chen";
-      const initials = savedUser.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase();
+      const initials = savedUser
+        .split(" ")
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
       setUserInitials(initials || "DC");
     };
 
@@ -180,11 +198,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   const filteredProducts = searchQuery
-    ? allProducts.filter((p: any) =>
-        p.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 5)
+    ? allProducts
+        .filter(
+          (p: any) =>
+            p.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.category.toLowerCase().includes(searchQuery.toLowerCase()),
+        )
+        .slice(0, 5)
     : [];
 
   return (
@@ -201,8 +222,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <p className="font-semibold tracking-tight leading-tight">SokoPulse</p>
-              <p className="text-[10px] text-muted-foreground -mt-0.5 tracking-wider uppercase">AI Platform</p>
+              <p className="font-semibold tracking-tight leading-tight">
+                SokoPulse
+              </p>
+              <p className="text-[10px] text-muted-foreground -mt-0.5 tracking-wider uppercase">
+                AI Platform
+              </p>
             </div>
           )}
         </div>
@@ -228,7 +253,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Icon className="size-4 shrink-0" />
                 {!collapsed && <span className="truncate">{item.label}</span>}
                 {!collapsed && item.to === "/alerts" && unresolvedCount > 0 && (
-                  <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-[10px]">
+                  <Badge
+                    variant="destructive"
+                    className="ml-auto h-5 px-1.5 text-[10px]"
+                  >
                     {unresolvedCount}
                   </Badge>
                 )}
@@ -243,7 +271,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground transition-colors"
             title="Toggle sidebar"
           >
-            <ChevronsLeft className={cn("size-4 transition-transform", collapsed && "rotate-180")} />
+            <ChevronsLeft
+              className={cn(
+                "size-4 transition-transform",
+                collapsed && "rotate-180",
+              )}
+            />
             {!collapsed && <span>Collapse</span>}
           </button>
         </div>
@@ -272,7 +305,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             {/* Float Command Search Results Dropdown */}
             {showResults && searchQuery && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-md shadow-lg max-h-60 overflow-y-auto z-50 p-2 space-y-1">
-                <p className="text-[10px] text-muted-foreground px-2 py-1 uppercase tracking-wider">Search Results ({filteredProducts.length})</p>
+                <p className="text-[10px] text-muted-foreground px-2 py-1 uppercase tracking-wider">
+                  Search Results ({filteredProducts.length})
+                </p>
                 {filteredProducts.map((p: any) => (
                   <Link
                     key={p.id}
@@ -289,27 +324,42 @@ export function AppShell({ children }: { children: ReactNode }) {
                   >
                     <div>
                       <p className="font-medium">{p.product_name}</p>
-                      <p className="text-[10px] text-muted-foreground uppercase font-mono">{p.sku} · {p.category}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase font-mono">
+                        {p.sku} · {p.category}
+                      </p>
                     </div>
-                    <span className="text-xs font-mono text-primary font-semibold">${Number(p.unit_price).toFixed(2)}</span>
+                    <span className="text-xs font-mono text-primary font-semibold">
+                      ${Number(p.unit_price).toFixed(2)}
+                    </span>
                   </Link>
                 ))}
                 {filteredProducts.length === 0 && (
-                  <p className="text-xs text-muted-foreground px-3 py-2">No matching products found.</p>
+                  <p className="text-xs text-muted-foreground px-3 py-2">
+                    No matching products found.
+                  </p>
                 )}
               </div>
             )}
           </div>
 
           <div className="flex items-center gap-2">
-            <div className={cn(
-              "hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full border",
-              isOffline
-                ? "bg-warning/10 text-warning border-warning/20"
-                : "bg-success/10 text-success border-success/20"
-            )}>
-              <span className={cn("size-1.5 rounded-full", isOffline ? "bg-warning" : "bg-success animate-pulse")} />
-              <span className="text-[11px] font-medium">{isOffline ? "Standalone Mode" : "AI Live"}</span>
+            <div
+              className={cn(
+                "hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full border",
+                isOffline
+                  ? "bg-warning/10 text-warning border-warning/20"
+                  : "bg-success/10 text-success border-success/20",
+              )}
+            >
+              <span
+                className={cn(
+                  "size-1.5 rounded-full",
+                  isOffline ? "bg-warning" : "bg-success animate-pulse",
+                )}
+              />
+              <span className="text-[11px] font-medium">
+                {isOffline ? "Standalone Mode" : "AI Live"}
+              </span>
             </div>
             <Button
               variant="ghost"
@@ -317,7 +367,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
               title="Toggle theme"
             >
-              {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+              {theme === "dark" ? (
+                <Sun className="size-4" />
+              ) : (
+                <Moon className="size-4" />
+              )}
             </Button>
             <Link to="/alerts">
               <Button variant="ghost" size="icon" className="relative">
@@ -328,8 +382,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Button>
             </Link>
             <div className="h-6 w-px bg-border mx-1" />
-            <Avatar className="size-8" title={localStorage.getItem("sokopulse_user") || "User Profile"}>
-              <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">{userInitials}</AvatarFallback>
+            <Avatar
+              className="size-8"
+              title={localStorage.getItem("sokopulse_user") || "User Profile"}
+            >
+              <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
+                {userInitials}
+              </AvatarFallback>
             </Avatar>
             {!isOffline && localStorage.getItem("sokopulse_token") && (
               <Button
@@ -355,7 +414,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Dialog open={showAuth} onOpenChange={setShowAuth}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle>{isLogin ? "Sign In to SokoPulse AI" : "Register Organization Account"}</DialogTitle>
+            <DialogTitle>
+              {isLogin
+                ? "Sign In to SokoPulse AI"
+                : "Register Organization Account"}
+            </DialogTitle>
             <DialogDescription>
               Connect to your Django secure operational database layer.
             </DialogDescription>
@@ -397,8 +460,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               />
             </div>
 
-            <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
-              {isSubmitting ? "Processing Handshake..." : isLogin ? "Sign In" : "Register Account"}
+            <Button
+              type="submit"
+              className="w-full mt-2"
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? "Processing Handshake..."
+                : isLogin
+                  ? "Sign In"
+                  : "Register Account"}
             </Button>
           </form>
 
@@ -407,7 +478,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               onClick={() => setIsLogin(!isLogin)}
               className="text-primary hover:underline"
             >
-              {isLogin ? "Need a new account? Register here" : "Already registered? Login here"}
+              {isLogin
+                ? "Need a new account? Register here"
+                : "Already registered? Login here"}
             </button>
             <button
               onClick={() => {

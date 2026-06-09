@@ -48,9 +48,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight">This page didn't load</h1>
+        <h1 className="text-xl font-semibold tracking-tight">
+          This page didn't load
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          Something went wrong on our end. You can try refreshing or head back
+          home.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -74,32 +77,34 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SokoPulse AI — Supply Chain Intelligence" },
-      {
-        name: "description",
-        content:
-          "AI-powered supply chain optimization, demand forecasting, dynamic pricing, and competitor intelligence.",
-      },
-      { property: "og:title", content: "SokoPulse AI" },
-      {
-        property: "og:description",
-        content:
-          "Intelligent supply chain optimization and decision-support platform.",
-      },
-      { property: "og:type", content: "website" },
-    ],
-    links: [{ rel: "stylesheet", href: appCss }],
-  }),
-  shellComponent: RootShell,
-  component: RootComponent,
-  notFoundComponent: NotFoundComponent,
-  errorComponent: ErrorComponent,
-});
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
+  {
+    head: () => ({
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { title: "SokoPulse AI — Supply Chain Intelligence" },
+        {
+          name: "description",
+          content:
+            "AI-powered supply chain optimization, demand forecasting, dynamic pricing, and competitor intelligence.",
+        },
+        { property: "og:title", content: "SokoPulse AI" },
+        {
+          property: "og:description",
+          content:
+            "Intelligent supply chain optimization and decision-support platform.",
+        },
+        { property: "og:type", content: "website" },
+      ],
+      links: [{ rel: "stylesheet", href: appCss }],
+    }),
+    shellComponent: RootShell,
+    component: RootComponent,
+    notFoundComponent: NotFoundComponent,
+    errorComponent: ErrorComponent,
+  },
+);
 
 function RootShell({ children }: { children: ReactNode }) {
   return (

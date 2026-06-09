@@ -3,9 +3,15 @@
 
 const API_BASE_URL = "http://localhost:5000/api";
 
-async function safeFetch<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
+async function safeFetch<T>(
+  endpoint: string,
+  options?: RequestInit,
+): Promise<T | null> {
   try {
-    const token = typeof window !== "undefined" ? localStorage.getItem("sokopulse_token") : null;
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("sokopulse_token")
+        : null;
     const authHeaders: Record<string, string> = {};
     if (token) {
       authHeaders["Authorization"] = `Bearer ${token}`;
@@ -28,10 +34,13 @@ async function safeFetch<T>(endpoint: string, options?: RequestInit): Promise<T 
     }
 
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    return await res.json() as T;
+    return (await res.json()) as T;
   } catch (error) {
     // Graceful fallback logger
-    console.warn(`Backend connection failed for endpoint ${endpoint}. SokoPulse is running in standalone mock mode.`, error);
+    console.warn(
+      `Backend connection failed for endpoint ${endpoint}. SokoPulse is running in standalone mock mode.`,
+      error,
+    );
     return null;
   }
 }
@@ -78,7 +87,11 @@ export const apiClient = {
   // Dynamic Pricing
   getPricing: async () => safeFetch<any[]>("/pricing/"),
   getRecommendations: async () => safeFetch<any[]>("/recommendations/"),
-  updateRecommendationStatus: async (id: string, status: string, overrideData?: any) =>
+  updateRecommendationStatus: async (
+    id: string,
+    status: string,
+    overrideData?: any,
+  ) =>
     safeFetch<any>(`/recommendations/${id}/update_status/`, {
       method: "PUT",
       body: JSON.stringify({ status, ...overrideData }),
