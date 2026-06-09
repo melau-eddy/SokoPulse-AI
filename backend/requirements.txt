@@ -11,3 +11,5 @@ beautifulsoup4
 google-generativeai
 drf-spectacular
 gunicorn
+psycopg2-binary
+
