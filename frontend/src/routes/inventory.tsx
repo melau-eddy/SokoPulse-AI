@@ -76,8 +76,15 @@ function InventoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Load products from backend
+  // Load products from backend and check search query params
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const searchParam = params.get("search");
+      if (searchParam) {
+        setQ(searchParam);
+      }
+    }
     apiClient.getProducts().then((data) => {
       if (data) {
         setProducts(data);

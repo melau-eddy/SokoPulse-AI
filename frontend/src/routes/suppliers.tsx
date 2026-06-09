@@ -8,6 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { suppliers as seedSuppliers } from "@/lib/mock-data";
 import { apiClient } from "../lib/api-client";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/suppliers")({
 
 function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<any[]>(seedSuppliers);
+  const [selectedSupplier, setSelectedSupplier] = useState<any | null>(null);
 
   useEffect(() => {
     apiClient.getSuppliers().then((data) => {
@@ -98,13 +100,75 @@ function SuppliersPage() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="sm" onClick={() => toast.info(`Viewing supplier audit for ${s.name}...`)}>View</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedSupplier(s)}>View</Button>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </SectionCard>
+
+      {/* Supplier Detail Dialog */}
+      <Dialog open={!!selectedSupplier} onOpenChange={(open) => !open && setSelectedSupplier(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>{selectedSupplier?.name}</DialogTitle>
+            <DialogDescription>
+              Performance profile and logistics dashboard.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSupplier && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase">Country</p>
+                  <p className="text-sm font-medium">{selectedSupplier.country}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase">Status</p>
+                  <Badge variant="outline" className={selectedSupplier.status === "active" ? "bg-success/10 text-success border-success/30 capitalize" : "bg-warning/10 text-warning border-warning/30 capitalize"}>
+                    {selectedSupplier.status}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase">Reliability Score</p>
+                  <p className="text-sm font-mono font-medium">{selectedSupplier.reliability}%</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase">Avg. Lead Time</p>
+                  <p className="text-sm font-mono font-medium">{selectedSupplier.leadTime} Days</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-border">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order Overview</p>
+                <div className="flex justify-between items-center bg-surface-2 p-3 rounded-md">
+                  <div>
+                    <p className="text-xs font-medium">Active Purchase Orders</p>
+                    <p className="text-[10px] text-muted-foreground">Currently in transit or production</p>
+                  </div>
+                  <span className="text-sm font-mono font-semibold">{selectedSupplier.activeOrders} POs</span>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-border">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contact Details</p>
+                <p className="text-xs text-muted-foreground">Email: <span className="text-foreground font-mono">logistics@{selectedSupplier.name.toLowerCase().replace(/[^a-z0-9]/g, "")}.com</span></p>
+                <p className="text-xs text-muted-foreground">Support Hotline: <span className="text-foreground font-mono">+1 (800) 555-019{selectedSupplier.id}</span></p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedSupplier(null)}>Close Profile</Button>
+            <Button onClick={() => {
+              setSelectedSupplier(null);
+              toast.success(`Procurement pipeline synced with ${selectedSupplier?.name}`);
+            }}>Sync Pipeline</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

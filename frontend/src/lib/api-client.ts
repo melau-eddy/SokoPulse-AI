@@ -19,6 +19,14 @@ async function safeFetch<T>(endpoint: string, options?: RequestInit): Promise<T 
         ...(options?.headers || {}),
       },
     });
+
+    if (res.status === 401 || res.status === 403) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("sokopulse_token");
+        window.dispatchEvent(new Event("auth-expired"));
+      }
+    }
+
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     return await res.json() as T;
   } catch (error) {
@@ -29,18 +37,30 @@ async function safeFetch<T>(endpoint: string, options?: RequestInit): Promise<T 
 }
 
 export const apiClient = {
+  // Auth
+  login: async (credentials: any) =>
+    safeFetch<any>("/auth/login/", {
+      method: "POST",
+      body: JSON.stringify(credentials),
+    }),
+  register: async (userData: any) =>
+    safeFetch<any>("/auth/register/", {
+      method: "POST",
+      body: JSON.stringify(userData),
+    }),
+
   // KPIs
   getKPIs: async () => safeFetch<any>("/dashboard/kpis/"),
 
   // Products
-  getProducts: async () => safeFetch<any[]>("/products"),
+  getProducts: async () => safeFetch<any[]>("/products/"),
   updateProduct: async (id: string, data: any) =>
-    safeFetch<any>(`/products/${id}`, {
+    safeFetch<any>(`/products/${id}/`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
   restockProduct: async (id: string) =>
-    safeFetch<any>(`/products/${id}/restock`, {
+    safeFetch<any>(`/products/${id}/restock/`, {
       method: "POST",
     }),
 
@@ -52,10 +72,10 @@ export const apiClient = {
     }),
 
   // Forecasting
-  getForecasting: async () => safeFetch<any>("/forecasting"),
+  getForecasting: async () => safeFetch<any>("/forecasting/"),
 
   // Dynamic Pricing
-  getPricing: async () => safeFetch<any[]>("/pricing"),
+  getPricing: async () => safeFetch<any[]>("/pricing/"),
   getRecommendations: async () => safeFetch<any[]>("/recommendations/"),
   updateRecommendationStatus: async (id: string, status: string, overrideData?: any) =>
     safeFetch<any>(`/recommendations/${id}/update_status/`, {
@@ -64,7 +84,7 @@ export const apiClient = {
     }),
 
   // Procurement
-  getProcurement: async () => safeFetch<any[]>("/procurement"),
+  getProcurement: async () => safeFetch<any[]>("/procurement/"),
   getPurchaseOrders: async () => safeFetch<any[]>("/purchase-orders/"),
   createPurchaseOrder: async (data: any) =>
     safeFetch<any>("/purchase-orders/", {

@@ -65,6 +65,9 @@ function AlertsPage() {
         prev.map((item) => (item.id === id ? { ...item, resolved: nextResolvedState } : item))
       );
       toast.success(currentlyResolved ? "Alert marked as unresolved" : "Alert marked as resolved");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("alerts-updated"));
+      }
     });
   };
 
@@ -90,6 +93,9 @@ function AlertsPage() {
         })
       );
       toast.success(`Resolved ${unresolved.length} alerts in current filter view.`);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("alerts-updated"));
+      }
     });
   };
 
@@ -107,6 +113,9 @@ function AlertsPage() {
             },
           },
         });
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("alerts-updated"));
+        }
       } else {
         // Standalone fallback
         const scenario = sampleScenarios[Math.floor(Math.random() * sampleScenarios.length)];
