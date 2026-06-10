@@ -146,8 +146,31 @@ function DashboardPage() {
       typeof window !== "undefined"
         ? localStorage.getItem("sokopulse_industry") || "Industrial"
         : "Industrial";
+
+    const competitorUrlsStr =
+      typeof window !== "undefined"
+        ? localStorage.getItem("sokopulse_competitor_urls") || ""
+        : "";
+
+    const competitorNames = competitorUrlsStr
+      ? competitorUrlsStr
+          .split(",")
+          .map((url) => {
+            let name = url.trim();
+            name = name.replace(/^(https?:\/\/)?(www\.)?/, "");
+            const dotIndex = name.indexOf(".");
+            if (dotIndex > -1) name = name.substring(0, dotIndex);
+            name = name.replace(/-/g, " ");
+            return name
+              .split(" ")
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(" ");
+          })
+          .filter(Boolean)
+      : undefined;
+
     apiClient
-      .triggerCompetitorScrape(industry)
+      .triggerCompetitorScrape(industry, competitorNames)
       .then(() => {
         fetchDashboardData();
         toast.success("AI insights and market telemetry refreshed.");

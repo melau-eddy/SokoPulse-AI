@@ -90,13 +90,18 @@ function CompetitorsPage() {
 
   // Scale chart data based on active product price ratio to Apex-9 (which is $1199 baseline)
   const scaleRatio = basePrice / 1199;
-  const simulatedChartData = competitorPrices.map((d) => ({
-    day: d.day,
-    us: Math.round(d.us * scaleRatio),
-    competitorA: Math.round(d.competitorA * scaleRatio),
-    competitorB: Math.round(d.competitorB * scaleRatio),
-    competitorC: Math.round(d.competitorC * scaleRatio),
-  }));
+  const simulatedChartData = competitorPrices.map((d) => {
+    const scaled: any = {
+      day: d.day,
+      us: Math.round(d.us * scaleRatio),
+    };
+    Object.keys(d).forEach((key) => {
+      if (key !== "day" && key !== "us") {
+        scaled[key] = Math.round(d[key] * scaleRatio);
+      }
+    });
+    return scaled;
+  });
 
   // Dynamic competitor values
   const simulatedCompetitors = competitors.map((c, i) => {
@@ -131,8 +136,31 @@ function CompetitorsPage() {
       typeof window !== "undefined"
         ? localStorage.getItem("sokopulse_industry") || "Industrial"
         : "Industrial";
+
+    const competitorUrlsStr =
+      typeof window !== "undefined"
+        ? localStorage.getItem("sokopulse_competitor_urls") || ""
+        : "";
+
+    const competitorNames = competitorUrlsStr
+      ? competitorUrlsStr
+          .split(",")
+          .map((url) => {
+            let name = url.trim();
+            name = name.replace(/^(https?:\/\/)?(www\.)?/, "");
+            const dotIndex = name.indexOf(".");
+            if (dotIndex > -1) name = name.substring(0, dotIndex);
+            name = name.replace(/-/g, " ");
+            return name
+              .split(" ")
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(" ");
+          })
+          .filter(Boolean)
+      : undefined;
+
     apiClient
-      .triggerCompetitorScrape(industry)
+      .triggerCompetitorScrape(industry, competitorNames)
       .then((res) => {
         setIsScraping(false);
         if (res) {

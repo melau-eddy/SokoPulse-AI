@@ -7,11 +7,11 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(name="api.tasks.scrape_competitors_task")
-def scrape_competitors_task(industry=None):
+def scrape_competitors_task(industry=None, competitors=None):
     """Celery background task to trigger the competitor scraping crawler."""
     logger.info(f"🚀 Starting background competitor scraping task for: {industry or 'Default'}")
     try:
-        scrape_competitor_prices(industry=industry)
+        scrape_competitor_prices(industry=industry, competitors=competitors)
         logger.info("✅ Background competitor scraping completed successfully.")
         return "Scraper completed."
     except Exception as e:

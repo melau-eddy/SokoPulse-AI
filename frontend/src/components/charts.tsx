@@ -224,14 +224,21 @@ export function InventoryDonut({
 export function CompetitorPriceChart({
   data,
 }: {
-  data: {
-    day: string;
-    us: number;
-    competitorA: number;
-    competitorB: number;
-    competitorC: number;
-  }[];
+  data: any[];
 }) {
+  if (!data || data.length === 0) return null;
+
+  const firstPoint = data[0];
+  const keys = Object.keys(firstPoint).filter((k) => k !== "day" && k !== "us");
+
+  const colors = [
+    "var(--color-accent)",
+    "var(--color-success)",
+    "var(--color-warning)",
+    "var(--color-destructive)",
+    "var(--color-info)",
+  ];
+
   return (
     <ResponsiveContainer width="100%" height={280}>
       <LineChart
@@ -255,30 +262,17 @@ export function CompetitorPriceChart({
           dot={false}
           name="SokoPulse"
         />
-        <Line
-          type="monotone"
-          dataKey="competitorA"
-          stroke="var(--color-accent)"
-          strokeWidth={2}
-          dot={false}
-          name="GlobalLogix"
-        />
-        <Line
-          type="monotone"
-          dataKey="competitorB"
-          stroke="var(--color-success)"
-          strokeWidth={2}
-          dot={false}
-          name="Nexus Pro"
-        />
-        <Line
-          type="monotone"
-          dataKey="competitorC"
-          stroke="var(--color-warning)"
-          strokeWidth={2}
-          dot={false}
-          name="Apex Trading"
-        />
+        {keys.map((key, idx) => (
+          <Line
+            key={key}
+            type="monotone"
+            dataKey={key}
+            stroke={colors[idx % colors.length]}
+            strokeWidth={2}
+            dot={false}
+            name={key}
+          />
+        ))}
       </LineChart>
     </ResponsiveContainer>
   );

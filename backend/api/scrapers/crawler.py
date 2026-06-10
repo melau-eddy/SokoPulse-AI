@@ -17,7 +17,7 @@ INDUSTRY_COMPETITORS = {
 }
 
 
-def scrape_competitor_prices(industry=None):
+def scrape_competitor_prices(industry=None, competitors=None):
     """
     Phase 6: Competitor Intelligence Module.
     Scrapes competitor web catalogs or generates normalized benchmarks for each product.
@@ -36,15 +36,16 @@ def scrape_competitor_prices(industry=None):
         normalized = str(industry).strip().title()
         industry_key = normalized
 
-    competitors = INDUSTRY_COMPETITORS.get(industry_key)
     if not competitors:
-        # Dynamically generate 4 competitor names for the custom industry
-        competitors = [
-            f"{industry_key}Direct",
-            f"Bio{industry_key} Solutions",
-            f"{industry_key} Pro",
-            f"Apex {industry_key}"
-        ]
+        competitors = INDUSTRY_COMPETITORS.get(industry_key)
+        if not competitors:
+            # Dynamically generate 4 competitor names for the custom industry
+            competitors = [
+                f"{industry_key}Direct",
+                f"Bio{industry_key} Solutions",
+                f"{industry_key} Pro",
+                f"Apex {industry_key}"
+            ]
 
     observations_created = 0
 

@@ -209,15 +209,22 @@ class CompetitorsView(APIView):
             })
             
         # 2. CompetitorPrices for chart
-        competitor_prices = [
-            { "day": "Mon", "us": 1199, "competitorA": 1249, "competitorB": 1179, "competitorC": 1225 },
-            { "day": "Tue", "us": 1199, "competitorA": 1239, "competitorB": 1185, "competitorC": 1220 },
-            { "day": "Wed", "us": 1189, "competitorA": 1239, "competitorB": 1195, "competitorC": 1219 },
-            { "day": "Thu", "us": 1189, "competitorA": 1259, "competitorB": 1199, "competitorC": 1230 },
-            { "day": "Fri", "us": 1199, "competitorA": 1269, "competitorB": 1210, "competitorC": 1245 },
-            { "day": "Sat", "us": 1209, "competitorA": 1289, "competitorB": 1225, "competitorC": 1252 },
-            { "day": "Sun", "us": 1219, "competitorA": 1299, "competitorB": 1230, "competitorC": 1265 },
-        ]
+        competitor_prices = []
+        days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        for d_idx, day in enumerate(days):
+            day_data = { "day": day, "us": 1199 }
+            for i, name in enumerate(competitor_names):
+                random.seed(d_idx + i * 100)
+                if i == 0:
+                    var = random.uniform(0.02, 0.06)
+                elif i == 1:
+                    var = random.uniform(-0.01, 0.01)
+                elif i == 2:
+                    var = random.uniform(-0.03, 0.01)
+                else:
+                    var = random.uniform(-0.06, -0.02)
+                day_data[name] = int(1199 * (1 + var))
+            competitor_prices.append(day_data)
         
         # 3. Pricing selector items
         pricing_items = []
@@ -275,7 +282,8 @@ class CompetitorsView(APIView):
                 # Re-run the ML intelligence/recommendations pipeline for the new items
                 run_intelligence_pipeline()
 
-            scrape_competitors_task.delay(industry=industry_name)
+            competitors = request.data.get("competitors")
+            scrape_competitors_task.delay(industry=industry_name, competitors=competitors)
             return self.get(request)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -520,13 +528,14 @@ class SettingsIndustryView(APIView):
         from api.tasks import scrape_competitors_task
         try:
             industry_name = request.data.get("industry")
+            competitors = request.data.get("competitors")
             if not industry_name:
                 return Response({"error": "Industry name is required"}, status=status.HTTP_400_BAD_REQUEST)
             
             print(f"🔄 Setting industry updated to {industry_name}. Wiping and re-seeding database...")
             seed_for_industry(industry_name)
             run_intelligence_pipeline()
-            scrape_competitors_task.delay(industry=industry_name)
+            scrape_competitors_task.delay(industry=industry_name, competitors=competitors)
             
             return Response({
                 "status": "success",

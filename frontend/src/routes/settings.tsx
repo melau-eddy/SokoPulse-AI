@@ -33,6 +33,7 @@ function SettingsPage() {
     return false;
   });
   const [isSavingOrg, setIsSavingOrg] = useState(false);
+  const [isSavingCompetitors, setIsSavingCompetitors] = useState(false);
 
   // Profile
   const [fullName, setFullName] = useState(() => {
@@ -226,8 +227,26 @@ function SettingsPage() {
                   localStorage.setItem("sokopulse_currency", currency);
                   localStorage.setItem("sokopulse_timezone", timezone);
                   
+                  // Clean up competitor display names from settings URLs
+                  const competitorNames = competitorUrls
+                    ? competitorUrls
+                        .split(",")
+                        .map((url) => {
+                          let name = url.trim();
+                          name = name.replace(/^(https?:\/\/)?(www\.)?/, "");
+                          const dotIndex = name.indexOf(".");
+                          if (dotIndex > -1) name = name.substring(0, dotIndex);
+                          name = name.replace(/-/g, " ");
+                          return name
+                            .split(" ")
+                            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                            .join(" ");
+                        })
+                        .filter(Boolean)
+                    : undefined;
+
                   apiClient
-                    .updateIndustry(industry)
+                    .updateIndustry(industry, competitorNames)
                     .then((res) => {
                       setIsSavingOrg(false);
                       if (res) {
@@ -355,7 +374,9 @@ function SettingsPage() {
             </div>
             <div className="pt-4 flex justify-end">
               <Button
+                disabled={isSavingCompetitors}
                 onClick={() => {
+                  setIsSavingCompetitors(true);
                   localStorage.setItem("sokopulse_scrape_freq", scrapeFreq);
                   localStorage.setItem(
                     "sokopulse_competitor_urls",
@@ -365,10 +386,41 @@ function SettingsPage() {
                     "sokopulse_price_change_threshold",
                     priceChangeThreshold,
                   );
-                  toast.success("Competitor settings saved!");
+
+                  // Parse competitor display names from URLs
+                  const competitorNames = competitorUrls
+                    ? competitorUrls
+                        .split(",")
+                        .map((url) => {
+                          let name = url.trim();
+                          name = name.replace(/^(https?:\/\/)?(www\.)?/, "");
+                          const dotIndex = name.indexOf(".");
+                          if (dotIndex > -1) name = name.substring(0, dotIndex);
+                          name = name.replace(/-/g, " ");
+                          return name
+                            .split(" ")
+                            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                            .join(" ");
+                        })
+                        .filter(Boolean)
+                    : undefined;
+
+                  apiClient
+                    .triggerCompetitorScrape(industry, competitorNames)
+                    .then((res) => {
+                      setIsSavingCompetitors(false);
+                      toast.success(
+                        "Competitor settings saved & crawler triggered for new entities!"
+                      );
+                    })
+                    .catch((err) => {
+                      setIsSavingCompetitors(false);
+                      toast.success("Competitor settings saved in standalone mode!");
+                    });
                 }}
               >
-                Save Competitor Settings
+                {isSavingCompetitors && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                {isSavingCompetitors ? "Syncing Crawler..." : "Save Competitor Settings"}
               </Button>
             </div>
           </SectionCard>
