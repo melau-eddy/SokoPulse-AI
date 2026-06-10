@@ -236,7 +236,7 @@ function PricingPage() {
           />
           <KpiCard
             label="Simulated Revenue Lift"
-            value={`$${Math.round(simulatedRevenueLift / 1000)}K`}
+            value={fmtCurrency(simulatedRevenueLift)}
             hint="Next 30 days projection"
             accent="primary"
           />
@@ -794,18 +794,14 @@ function PricingPage() {
                           Proposed Price Delta:
                         </span>
                         <span className="font-mono">
-                          {parseFloat(customPriceInput) -
-                            overrideItem.currentPrice >=
-                          0
-                            ? "+"
-                            : ""}
-                          {(
-                            ((parseFloat(customPriceInput) -
-                              overrideItem.currentPrice) /
-                              overrideItem.currentPrice) *
-                            100
-                          ).toFixed(1)}
-                          %
+                          {(() => {
+                            const rate = activeCurrency === "KES" ? 130.0 : 1.0;
+                            const currentVal = overrideItem.currentPrice * rate;
+                            const inputVal = parseFloat(customPriceInput) || 0;
+                            const diff = inputVal - currentVal;
+                            const diffPct = currentVal > 0 ? (diff / currentVal) * 100 : 0;
+                            return `${diff >= 0 ? "+" : ""}${diffPct.toFixed(1)}%`;
+                          })()}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -815,9 +811,11 @@ function PricingPage() {
                         <span className="font-mono font-medium">
                           {(() => {
                             const newP = parseFloat(customPriceInput);
+                            if (!newP || newP <= 0) return 0;
+                            const rate = activeCurrency === "KES" ? 130.0 : 1.0;
                             const cost =
                               overrideItem.currentPrice *
-                              (1 - overrideItem.margin / 100);
+                              (1 - overrideItem.margin / 100) * rate;
                             return Math.round(((newP - cost) / newP) * 100);
                           })()}
                           %
