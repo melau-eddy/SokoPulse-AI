@@ -203,12 +203,18 @@ def seed_for_industry(industry_name):
         )
 
     # 5. Generate Competitor Benchmark Observations
-    competitors = [
-        f"{normalized_name}Direct",
-        f"Bio{normalized_name} Solutions",
-        f"{normalized_name} Pro",
-        f"Apex {normalized_name}"
-    ]
+    currency = "USD"
+    try:
+        import os
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        file_path = os.path.join(base_dir, "currency_setting.txt")
+        if os.path.exists(file_path):
+            with open(file_path, "r") as f:
+                currency = f.read().strip().upper()
+    except Exception:
+        pass
+
+    competitors = get_crawler_competitors(normalized_name, currency)
     
     for p_name, product in products_map.items():
         base_price = float(product.unit_price)
@@ -325,6 +331,19 @@ def get_active_industry():
     return "Industrial"
 
 
+def get_crawler_competitors(industry_name, currency):
+    """Helper to get the list of 4 real/crawled competitors for a given industry and currency."""
+    from api.scrapers.crawler import US_COMPETITORS, KENYAN_COMPETITORS, get_real_competitors_via_ai
+    normalized = str(industry_name).strip().title()
+    if currency == "KES":
+        comps = KENYAN_COMPETITORS.get(normalized)
+    else:
+        comps = US_COMPETITORS.get(normalized)
+    if not comps:
+        comps = get_real_competitors_via_ai(normalized, currency)
+    return comps
+
+
 def get_valid_competitors(industry_name=None, currency=None):
     """Returns the set of valid competitor names for the active or given industry/currency."""
     if not industry_name:
@@ -343,10 +362,20 @@ def get_valid_competitors(industry_name=None, currency=None):
         if not currency:
             currency = "USD"
 
-    from api.scrapers.crawler import US_COMPETITORS, KENYAN_COMPETITORS
+    from api.scrapers.crawler import US_COMPETITORS, KENYAN_COMPETITORS, get_real_competitors_via_ai
     normalized = str(industry_name).strip().title()
 
-    # 1. Seeder names
+    # Predefined competitors
+    if currency == "KES":
+        competitors = KENYAN_COMPETITORS.get(normalized)
+    else:
+        competitors = US_COMPETITORS.get(normalized)
+
+    # Dynamic lookup for custom industries
+    if not competitors:
+        competitors = get_real_competitors_via_ai(normalized, currency)
+
+    # Add seeder fallback names to allow both during transitional states
     seeder_names = [
         f"{normalized}Direct",
         f"Bio{normalized} Solutions",
@@ -354,21 +383,5 @@ def get_valid_competitors(industry_name=None, currency=None):
         f"Apex {normalized}"
     ]
 
-    # 2. Crawler names
-    if currency == "KES":
-        crawler_names = KENYAN_COMPETITORS.get(normalized, [
-            f"{normalized} East Africa",
-            f"Kenya {normalized}",
-            f"Nairobi {normalized} Pro",
-            f"Soko {normalized}"
-        ])
-    else:
-        crawler_names = US_COMPETITORS.get(normalized, [
-            f"{normalized} US",
-            f"American {normalized}",
-            f"{normalized} Pro USA",
-            f"Apex {normalized}"
-        ])
-
-    return set(seeder_names + crawler_names)
+    return set(list(competitors) + seeder_names)
 
