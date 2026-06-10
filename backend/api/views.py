@@ -432,6 +432,27 @@ class PricingView(APIView):
                 )
             recommendations = AIRecommendation.objects.filter(recommendation_type="price")
             
+        # Determine the current industry dynamically
+        first_product = Product.objects.first()
+        industry = "Industrial"
+        if first_product:
+            name_lower = first_product.product_name.lower()
+            sku_lower = first_product.sku.lower()
+            if "rose" in name_lower or "lily" in name_lower or "tulip" in name_lower or "flw" in sku_lower:
+                industry = "Flowers"
+            elif "aspirin" in name_lower or "amoxicillin" in name_lower or "vitamin c" in name_lower or "asp" in sku_lower:
+                industry = "Pharmaceuticals"
+            elif "apple" in name_lower or "milk" in name_lower or "bread" in name_lower or "apl" in sku_lower:
+                industry = "Retail"
+            elif "mask" in name_lower or "glove" in name_lower or "thermometer" in name_lower or "msk" in sku_lower:
+                industry = "Healthcare"
+            elif "cement" in name_lower or "rebar" in name_lower or "pine" in name_lower or "cmt" in sku_lower:
+                industry = "Construction"
+            elif "optical sensor" in name_lower or "neural" in name_lower or "apx" in sku_lower:
+                industry = "Industrial"
+            else:
+                industry = first_product.category.title() or "Industrial"
+
         for r in recommendations:
             product = r.product
             rec_price = product.unit_price * Decimal("1.05")
@@ -442,6 +463,65 @@ class PricingView(APIView):
             margin = r.override_margin if r.override_margin is not None else Decimal("32")
             impact = r.override_impact if r.override_impact is not None else Decimal("4.8")
             
+            # Dynamic market factors based on industry & product name hash
+            ind = industry.lower()
+            h = sum(ord(c) for c in product.product_name) + (product.id or 0)
+            
+            if "flower" in ind:
+                elasticity = ["-1.8 (Highly Elastic)", "-1.5 (Elastic)", "-2.1 (Highly Elastic)"][h % 3]
+                seasonality = ["+45.0% (Valentines Peak)", "+15.0% (Spring Peak)", "+5.0% (Off-Season)"][h % 3]
+                supplier_cost = ["+8.2% (Air Freight Surcharge)", "+4.0% (Grower Fuel Cost)", "+1.5% (Stable)"][h % 3]
+                external = [
+                    "European Frost: Delaying cold-chain logistics",
+                    "Aviation Fuel Rise: Cargo rates up 12%",
+                    "Water Scarcity: Impacting domestic flower yields"
+                ][h % 3]
+            elif "pharm" in ind:
+                elasticity = ["-0.4 (Inelastic)", "-0.2 (Highly Inelastic)", "-0.5 (Inelastic)"][h % 3]
+                seasonality = ["+8.0% (Flu/Winter Season)", "+2.0% (Stable)", "+4.0% (Spring Allergy Peak)"][h % 3]
+                supplier_cost = ["+6.5% (Active API Shortage)", "+2.0% (Lab Verification Surcharge)", "+0.5% (Stable)"][h % 3]
+                external = [
+                    "FDA Regulation: Stricter quality verification",
+                    "Patent Expiry: Generics entering market",
+                    "Global API Shortage: Key active compounds constrained"
+                ][h % 3]
+            elif "retail" in ind:
+                elasticity = ["-1.2 (Elastic)", "-1.4 (Elastic)", "-0.9 (Unitary)"][h % 3]
+                seasonality = ["+18.0% (Holiday Peak)", "+5.0% (Back to School)", "+1.0% (Stable)"][h % 3]
+                supplier_cost = ["+3.0% (Packaging Cost)", "+1.5% (Local Transport)", "+0.5% (Stable)"][h % 3]
+                external = [
+                    "Consumer Shift: Higher demand for budget brands",
+                    "Retail Freight: Port congestion delaying imports",
+                    "Tariff Change: Import customs duties increased by 3%"
+                ][h % 3]
+            elif "health" in ind:
+                elasticity = ["-0.3 (Highly Inelastic)", "-0.5 (Inelastic)", "-0.2 (Highly Inelastic)"][h % 3]
+                seasonality = ["+2.0% (Stable)", "+6.0% (Winter Surge)", "+1.5% (Stable)"][h % 3]
+                supplier_cost = ["+4.2% (Sterilization Cost)", "+2.5% (Tariff Surcharge)", "+1.0% (Stable)"][h % 3]
+                external = [
+                    "WHO Mandates: National stockpiling guidelines active",
+                    "Sterilization Delay: Chemical supply chain constraints",
+                    "Import Customs: Inspection wait times increased"
+                ][h % 3]
+            elif "const" in ind:
+                elasticity = ["-1.1 (Elastic)", "-0.8 (Inelastic)", "-1.3 (Elastic)"][h % 3]
+                seasonality = ["+15.0% (Summer Building Peak)", "+8.0% (Spring Lift)", "-2.0% (Winter Slowdown)"][h % 3]
+                supplier_cost = ["+12.4% (Steel Mill Tariff)", "+6.0% (Timber Supply Surcharge)", "+3.5% (Logistics Cost)"][h % 3]
+                external = [
+                    "Housing Starts: Down 4.2% slowing material demand",
+                    "Steel Tariff: New trade protection measures active",
+                    "Logistics: Diesel fuel prices raising delivery fees"
+                ][h % 3]
+            else:  # Industrial / Fallback
+                elasticity = ["-0.9 (Unitary)", "-1.1 (Elastic)", "-0.7 (Inelastic)"][h % 3]
+                seasonality = ["+3.0% (Year-end Capex Peak)", "+1.0% (Stable)", "+2.0% (Q2 Procurement Peak)"][h % 3]
+                supplier_cost = ["+5.5% (Raw Metal Fluctuation)", "+3.0% (Freight Rise)", "+0.8% (Stable)"][h % 3]
+                external = [
+                    "Energy Tariff: Peak hour industrial power grid surcharges",
+                    "Microchip Delays: Component lead times extended",
+                    "Freight Index: Dry bulk shipping container rates up 8%"
+                ][h % 3]
+
             data.append({
                 "id": str(r.id),
                 "product": product.product_name,
@@ -454,6 +534,10 @@ class PricingView(APIView):
                 "overridePrice": float(r.override_price) if r.override_price is not None else None,
                 "overrideMargin": float(r.override_margin) if r.override_margin is not None else None,
                 "overrideImpact": float(r.override_impact) if r.override_impact is not None else None,
+                "demandElasticity": elasticity,
+                "seasonalityFactor": seasonality,
+                "supplierCostFactor": supplier_cost,
+                "externalFactor": external,
             })
             
         return Response(data)

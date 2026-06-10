@@ -62,6 +62,10 @@ export interface PricingItem {
   competitorAvg: number;
   margin: number;
   expectedImpact: number;
+  demandElasticity?: string;
+  seasonalityFactor?: string;
+  supplierCostFactor?: string;
+  externalFactor?: string;
 }
 
 export interface ProcurementItem {

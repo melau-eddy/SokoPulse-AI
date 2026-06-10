@@ -282,15 +282,70 @@ function PricingPage() {
                       return (
                         <TableRow key={p.id}>
                           <TableCell className="font-medium">
-                            <div>
-                              <span>{p.product}</span>
-                              {p.overridePrice && (
-                                <Badge
-                                  variant="outline"
-                                  className="ml-2 bg-primary/10 text-primary border-primary/20 text-[9px] px-1 py-0 h-4"
-                                >
-                                  Overridden
-                                </Badge>
+                            <div className="flex flex-col gap-1.5 py-1">
+                              <div className="flex items-center">
+                                <span className="text-sm font-semibold text-foreground">{p.product}</span>
+                                {p.overridePrice && (
+                                  <Badge
+                                    variant="outline"
+                                    className="ml-2 bg-primary/10 text-primary border-primary/20 text-[9px] px-1.5 py-0 h-4"
+                                  >
+                                    Overridden
+                                  </Badge>
+                                )}
+                              </div>
+                              {/* Market Factors Section */}
+                              {(p.demandElasticity || p.seasonalityFactor || p.supplierCostFactor || p.externalFactor) && (
+                                <div className="flex flex-wrap gap-1 items-center mt-1">
+                                  {p.demandElasticity && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-500/5 text-blue-400 border-blue-500/20 cursor-help font-mono">
+                                          Elas: {p.demandElasticity.split(" ")[0]}
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs">Demand Elasticity: {p.demandElasticity}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {p.seasonalityFactor && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-500/5 text-amber-400 border-amber-500/20 cursor-help font-mono">
+                                          Seas: {p.seasonalityFactor.split(" ")[0]}
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs">Seasonality Index: {p.seasonalityFactor}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {p.supplierCostFactor && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-purple-500/5 text-purple-400 border-purple-500/20 cursor-help font-mono">
+                                          Cost: {p.supplierCostFactor.split(" ")[0]}
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs">Supplier Cost Factor: {p.supplierCostFactor}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {p.externalFactor && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-emerald-500/5 text-emerald-400 border-emerald-500/20 cursor-help max-w-[150px] truncate">
+                                          Ext: {p.externalFactor.split(":")[0]}
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs max-w-[250px]">{p.externalFactor}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </TableCell>
