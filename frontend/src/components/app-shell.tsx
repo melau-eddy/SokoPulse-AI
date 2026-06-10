@@ -384,13 +384,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="h-6 w-px bg-border mx-1" />
             <Avatar
               className="size-8"
-              title={localStorage.getItem("sokopulse_user") || "User Profile"}
+              title={typeof window !== "undefined" ? (localStorage.getItem("sokopulse_user") || "User Profile") : "User Profile"}
             >
               <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
                 {userInitials}
               </AvatarFallback>
             </Avatar>
-            {!isOffline && localStorage.getItem("sokopulse_token") && (
+            {!isOffline && (typeof window !== "undefined" && localStorage.getItem("sokopulse_token")) && (
               <Button
                 variant="ghost"
                 size="xs"

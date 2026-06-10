@@ -27,14 +27,25 @@ def scrape_competitor_prices(industry=None):
         print("ℹ️ No products registered to compile competitor benchmarks.")
         return
 
+    # Clear existing competitor data to avoid mixing up different industries/lines of business
+    CompetitorData.objects.all().delete()
+
     # Normalize industry input
     industry_key = "Industrial"
     if industry:
-        normalized = str(industry).strip().capitalize()
-        if normalized in INDUSTRY_COMPETITORS:
-            industry_key = normalized
+        normalized = str(industry).strip().title()
+        industry_key = normalized
 
-    competitors = INDUSTRY_COMPETITORS[industry_key]
+    competitors = INDUSTRY_COMPETITORS.get(industry_key)
+    if not competitors:
+        # Dynamically generate 4 competitor names for the custom industry
+        competitors = [
+            f"{industry_key}Direct",
+            f"Bio{industry_key} Solutions",
+            f"{industry_key} Pro",
+            f"Apex {industry_key}"
+        ]
+
     observations_created = 0
 
     for product in products:
@@ -63,16 +74,20 @@ def scrape_competitor_prices(industry=None):
                         scraped_availability = "Out of Stock"
             except Exception:
                 # Standalone fallback: generate realistic competitor pricing margins
-                # GlobalLogix is highest, Meridian is cheapest
+                try:
+                    comp_idx = competitors.index(competitor)
+                except ValueError:
+                    comp_idx = 0
+
                 variance = 0.0
-                if competitor == "GlobalLogix":
-                    variance = random.uniform(0.02, 0.06) # +2% to +6%
-                elif competitor == "Nexus Supply Pro":
-                    variance = random.uniform(-0.01, 0.01) # -1% to +1%
-                elif competitor == "Apex Trading Co.":
-                    variance = random.uniform(-0.03, 0.01) # -3% to +1%
-                elif competitor == "Meridian Imports":
-                    variance = random.uniform(-0.06, -0.02) # -6% to -2%
+                if comp_idx == 0:
+                    variance = random.uniform(0.02, 0.06) # Premium competitor (+2% to +6%)
+                elif comp_idx == 1:
+                    variance = random.uniform(-0.01, 0.01) # Parity competitor (-1% to +1%)
+                elif comp_idx == 2:
+                    variance = random.uniform(-0.03, 0.01) # Slightly cheaper (-3% to +1%)
+                elif comp_idx == 3:
+                    variance = random.uniform(-0.06, -0.02) # Discounter (-6% to -2%)
 
                 scraped_price = round(base_price * (1 + variance), 2)
                 scraped_availability = "In Stock" if random.random() > 0.15 else "Out of Stock"

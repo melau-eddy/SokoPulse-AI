@@ -126,12 +126,21 @@ class AlertViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["POST"])
     def simulate(self, request):
+        products = list(Product.objects.all())
+        p1 = products[0].product_name if len(products) > 0 else "Product Alpha"
+        p2 = products[1].product_name if len(products) > 1 else "Product Beta"
+        p3 = products[2].product_name if len(products) > 2 else "Product Gamma"
+        p4 = products[3].product_name if len(products) > 3 else "Product Delta"
+        
+        suppliers = list(Supplier.objects.values_list("supplier_name", flat=True))
+        s1 = suppliers[0] if len(suppliers) > 0 else "Main Supplier"
+        
         scenarios = [
-            {"title": "Anomaly detected: Titan Castings demand", "desc": "Sales spike +65% over past 12h, suspected supply run by competitor.", "category": "Demand", "severity": "high"},
-            {"title": "Expiring batch: Lithium cells Mod-8", "desc": "150 units expiring in 15 days in East warehouse.", "category": "Inventory", "severity": "medium"},
-            {"title": "Competitor Price Match opportunity", "desc": "Nexus Supply raised Apex-9 price by $35. Recommended parity adjustment: +2.9%.", "category": "Pricing", "severity": "low"},
+            {"title": f"Anomaly detected: {p1} demand", "desc": "Sales spike +65% over past 12h, suspected supply run by competitor.", "category": "Demand", "severity": "high"},
+            {"title": f"Expiring batch: {p2}", "desc": "150 units expiring in 15 days in East warehouse.", "category": "Inventory", "severity": "medium"},
+            {"title": f"Competitor Price Match opportunity: {p3}", "desc": "Competitors raised matching prices by $35. Recommended parity adjustment: +2.9%.", "category": "Pricing", "severity": "low"},
             {"title": "Integration sync failed: NetSuite ERP", "desc": "API connection timeout during batch ledger transfer.", "category": "System", "severity": "critical"},
-            {"title": "Fulfillment delay: SunGrid panels", "desc": "Shipment #PO-9471 delayed by 4 days due to port congestion.", "category": "Supplier", "severity": "medium"},
+            {"title": f"Fulfillment delay: {p4}", "desc": f"Shipment #PO-9471 from {s1} delayed by 4 days due to port congestion.", "category": "Supplier", "severity": "medium"},
         ]
         scenario = random.choice(scenarios)
         alert = Alert.objects.create(
@@ -235,9 +244,38 @@ class CompetitorsView(APIView):
 
     def post(self, request):
         from api.tasks import scrape_competitors_task
+        from api.utils.dynamic_seeder import seed_for_industry
+        from api.ml.forecaster import run_intelligence_pipeline
+        from api.models import Product
         try:
             industry = request.data.get("industry")
-            scrape_competitors_task.delay(industry=industry)
+            industry_name = industry or "Industrial"
+            
+            # Check if database has products, and if they match the requested industry
+            first_product = Product.objects.first()
+            reseed_needed = True
+
+            if first_product:
+                from api.utils.dynamic_seeder import INDUSTRY_TEMPLATES, generate_custom_products
+                normalized = industry_name.strip().title()
+                template = INDUSTRY_TEMPLATES.get(normalized)
+                if template:
+                    template_names = [item["name"] for item in template]
+                    if first_product.product_name in template_names:
+                        reseed_needed = False
+                else:
+                    custom_items = generate_custom_products(normalized)
+                    custom_names = [item["name"] for item in custom_items]
+                    if first_product.product_name in custom_names:
+                        reseed_needed = False
+
+            if reseed_needed:
+                print(f"🔄 Detected industry change to {industry_name}. Re-seeding database dynamically...")
+                seed_for_industry(industry_name)
+                # Re-run the ML intelligence/recommendations pipeline for the new items
+                run_intelligence_pipeline()
+
+            scrape_competitors_task.delay(industry=industry_name)
             return self.get(request)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -331,16 +369,27 @@ class ForecastingView(APIView):
             ]
             
         # Top-growing / slow-moving products
-        top_growers = [
-            { "name": "Smart Hub Z-Wave", "growth": 43, "units": 612 },
-            { "name": "Neural Engine Core v2", "growth": 28, "units": 890 },
-            { "name": "Solar-X Panel 400W", "growth": 19, "units": 64 },
-        ]
-        slow_moving = [
-            { "name": "Ceramic Capacitor 220uF", "growth": -18, "units": 85000 },
-            { "name": "Titan Castings (Legacy)", "growth": -12, "units": 142 },
-            { "name": "Flex-Cable Assembly", "growth": -4, "units": 2400 },
-        ]
+        all_products = list(Product.objects.all())
+        if all_products:
+            # Sort products by assigning stable growth values based on seed
+            random.seed(42)
+            sorted_products = []
+            for p in all_products:
+                inv = Inventory.objects.filter(product=p).first()
+                units = inv.quantity_available if inv else 0
+                growth = random.randint(-25, 50)
+                sorted_products.append({
+                    "name": p.product_name,
+                    "growth": growth,
+                    "units": units
+                })
+            sorted_products.sort(key=lambda x: x["growth"], reverse=True)
+            top_growers = sorted_products[:3]
+            slow_moving = sorted_products[-3:]
+            slow_moving.reverse()
+        else:
+            top_growers = []
+            slow_moving = []
         
         return Response({
             "accuracy": "94.2%",
@@ -462,3 +511,26 @@ class ProcurementView(APIView):
             })
             
         return Response(data)
+
+
+class SettingsIndustryView(APIView):
+    def post(self, request):
+        from api.utils.dynamic_seeder import seed_for_industry
+        from api.ml.forecaster import run_intelligence_pipeline
+        from api.tasks import scrape_competitors_task
+        try:
+            industry_name = request.data.get("industry")
+            if not industry_name:
+                return Response({"error": "Industry name is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            print(f"🔄 Setting industry updated to {industry_name}. Wiping and re-seeding database...")
+            seed_for_industry(industry_name)
+            run_intelligence_pipeline()
+            scrape_competitors_task.delay(industry=industry_name)
+            
+            return Response({
+                "status": "success",
+                "message": f"Database successfully re-seeded for {industry_name}"
+            })
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

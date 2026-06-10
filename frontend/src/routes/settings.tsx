@@ -10,6 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { apiClient } from "../lib/api-client";
+import { RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — SokoPulse AI" }] }),
@@ -30,6 +32,7 @@ function SettingsPage() {
     }
     return false;
   });
+  const [isSavingOrg, setIsSavingOrg] = useState(false);
 
   // Profile
   const [fullName, setFullName] = useState(() => {
@@ -215,15 +218,34 @@ function SettingsPage() {
             </div>
             <div className="pt-4 flex justify-end">
               <Button
+                disabled={isSavingOrg}
                 onClick={() => {
+                  setIsSavingOrg(true);
                   localStorage.setItem("sokopulse_org", orgName);
                   localStorage.setItem("sokopulse_industry", industry);
                   localStorage.setItem("sokopulse_currency", currency);
                   localStorage.setItem("sokopulse_timezone", timezone);
-                  toast.success("Organization details saved!");
+                  
+                  apiClient
+                    .updateIndustry(industry)
+                    .then((res) => {
+                      setIsSavingOrg(false);
+                      if (res) {
+                        toast.success(
+                          `Organization saved & database dynamically re-seeded for "${industry}"!`
+                        );
+                      } else {
+                        toast.success("Organization details saved in standalone mode!");
+                      }
+                    })
+                    .catch((err) => {
+                      setIsSavingOrg(false);
+                      toast.error("Failed to dynamically re-seed database.");
+                    });
                 }}
               >
-                Save Organization
+                {isSavingOrg && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                {isSavingOrg ? "Updating Database..." : "Save Organization"}
               </Button>
             </div>
           </SectionCard>

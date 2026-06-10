@@ -126,4 +126,11 @@ export const apiClient = {
     safeFetch<any>("/alerts/simulate/", {
       method: "POST",
     }),
+
+  // Settings
+  updateIndustry: async (industry: string) =>
+    safeFetch<any>("/settings/industry/", {
+      method: "POST",
+      body: JSON.stringify({ industry }),
+    }),
 };
