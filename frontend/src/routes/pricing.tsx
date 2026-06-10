@@ -31,7 +31,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { pricingItems as seedItems, type PricingItem } from "@/lib/mock-data";
+import { pricingItems as seedItems, type PricingItem, formatPrice, fmtCurrency } from "@/lib/mock-data";
 import { apiClient } from "../lib/api-client";
 import { toast } from "sonner";
 
@@ -62,6 +62,12 @@ function PricingPage() {
     100,
   ]); // percentage of recommended adjustment (50% to 150%)
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [activeCurrency, setActiveCurrency] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sokopulse_currency") || "USD";
+    }
+    return "USD";
+  });
 
   // Load pricing recommendations from backend
   useEffect(() => {
@@ -71,6 +77,14 @@ function PricingPage() {
         setSelectedItemId(data[0].id);
       }
     });
+
+    const handleCurrencyUpdated = () => {
+      setActiveCurrency(localStorage.getItem("sokopulse_currency") || "USD");
+    };
+    window.addEventListener("currency-updated", handleCurrencyUpdated);
+    return () => {
+      window.removeEventListener("currency-updated", handleCurrencyUpdated);
+    };
   }, []);
 
   // Filter items
@@ -131,32 +145,37 @@ function PricingPage() {
 
   const openOverrideDialog = (item: StatefulPricingItem) => {
     setOverrideItem(item);
+    const rate = activeCurrency === "KES" ? 130.0 : 1.0;
     setCustomPriceInput(
-      (item.overridePrice ?? item.recommendedPrice).toFixed(2),
+      ((item.overridePrice ?? item.recommendedPrice) * rate).toFixed(2),
     );
   };
 
   const saveOverride = () => {
     if (!overrideItem) return;
-    const newPrice = parseFloat(customPriceInput);
-    if (isNaN(newPrice) || newPrice <= 0) {
+    const inputPrice = parseFloat(customPriceInput);
+    if (isNaN(inputPrice) || inputPrice <= 0) {
       toast.error("Please enter a valid price");
       return;
     }
 
+    const rate = activeCurrency === "KES" ? 130.0 : 1.0;
+    // Convert back to USD base price to store in DB
+    const newPriceUSD = inputPrice / rate;
+
     // Estimate cost based on current price and base margin
-    const estimatedCost =
+    const estimatedCostUSD =
       overrideItem.currentPrice * (1 - overrideItem.margin / 100);
-    const newMargin = Math.round(((newPrice - estimatedCost) / newPrice) * 100);
+    const newMargin = Math.round(((newPriceUSD - estimatedCostUSD) / newPriceUSD) * 100);
 
     // Relative impact estimate
     const priceChangePct =
-      (newPrice - overrideItem.currentPrice) / overrideItem.currentPrice;
+      (newPriceUSD - overrideItem.currentPrice) / overrideItem.currentPrice;
     const estimatedImpact = Math.round(priceChangePct * 10 * 10) / 10; // Simple linear pricing impact model
 
     apiClient
       .updateRecommendationStatus(overrideItem.id, "overridden", {
-        override_price: newPrice,
+        override_price: newPriceUSD,
         override_margin: newMargin,
         override_impact: estimatedImpact,
       })
@@ -167,7 +186,7 @@ function PricingPage() {
               ? {
                   ...item,
                   status: "overridden" as const,
-                  overridePrice: newPrice,
+                  overridePrice: newPriceUSD,
                   overrideMargin: newMargin,
                   overrideImpact: estimatedImpact,
                 }
@@ -175,8 +194,9 @@ function PricingPage() {
           ),
         );
 
+        const displayFormattedPrice = activeCurrency === "KES" ? `KES ${(newPriceUSD * 130.0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : `$${newPriceUSD.toFixed(2)}`;
         toast.success(
-          `Applied custom override of $${newPrice.toFixed(2)} for ${overrideItem.product}`,
+          `Applied custom override of ${displayFormattedPrice} for ${overrideItem.product}`,
         );
         setOverrideItem(null);
       });
@@ -359,11 +379,11 @@ function PricingPage() {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="text-right font-mono">
-                            ${p.currentPrice.toFixed(2)}
+                           <TableCell className="text-right font-mono">
+                            {formatPrice(p.currentPrice)}
                           </TableCell>
                           <TableCell className="text-right font-mono font-semibold">
-                            ${displayPrice.toFixed(2)}
+                            {formatPrice(displayPrice)}
                             <Badge
                               variant="outline"
                               className={`ml-2 text-[10px] ${delta >= 0 ? "bg-success/10 text-success border-success/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}
@@ -373,7 +393,7 @@ function PricingPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right font-mono text-muted-foreground">
-                            ${p.competitorAvg.toFixed(2)}
+                            {formatPrice(p.competitorAvg)}
                           </TableCell>
                           <TableCell className="text-right font-mono">
                             {displayMargin}%
@@ -503,11 +523,11 @@ function PricingPage() {
                       <div className="grid grid-cols-2 gap-2 text-xs pt-1.5 border-t border-border/50">
                         <div>
                           <span className="text-muted-foreground block text-[9px] uppercase">Current</span>
-                          <span className="font-mono font-semibold">${selectedItem.currentPrice.toFixed(2)}</span>
+                          <span className="font-mono font-semibold">{formatPrice(selectedItem.currentPrice)}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground block text-[9px] uppercase">Advised</span>
-                          <span className="font-mono font-bold text-primary">${(selectedItem.overridePrice ?? selectedItem.recommendedPrice).toFixed(2)}</span>
+                          <span className="font-mono font-bold text-primary">{formatPrice(selectedItem.overridePrice ?? selectedItem.recommendedPrice)}</span>
                         </div>
                       </div>
                     </div>
@@ -680,10 +700,7 @@ function PricingPage() {
                         Projected Revenue Lift:
                       </span>
                       <span className="font-mono font-bold text-primary">
-                        $
-                        {simulatedRevenueLift.toLocaleString(undefined, {
-                          maximumFractionDigits: 0,
-                        })}
+                        {fmtCurrency(simulatedRevenueLift)}
                       </span>
                     </div>
                   </div>
@@ -742,7 +759,7 @@ function PricingPage() {
                         Current Price
                       </span>
                       <p className="text-base font-semibold font-mono">
-                        ${overrideItem.currentPrice.toFixed(2)}
+                        {formatPrice(overrideItem.currentPrice)}
                       </p>
                     </div>
                     <div className="space-y-1">
@@ -750,13 +767,13 @@ function PricingPage() {
                         AI Recommended
                       </span>
                       <p className="text-base font-semibold font-mono text-primary">
-                        ${overrideItem.recommendedPrice.toFixed(2)}
+                        {formatPrice(overrideItem.recommendedPrice)}
                       </p>
                     </div>
                   </div>
 
                   <div className="grid gap-2">
-                    <Label htmlFor="customPrice">Custom Target Price ($)</Label>
+                    <Label htmlFor="customPrice">Custom Target Price ({activeCurrency})</Label>
                     <Input
                       id="customPrice"
                       type="number"

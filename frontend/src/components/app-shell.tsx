@@ -56,6 +56,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [unresolvedCount, setUnresolvedCount] = useState(0);
   const [showAuth, setShowAuth] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [activeCurrency, setActiveCurrency] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sokopulse_currency") || "USD";
+    }
+    return "USD";
+  });
 
   // Authentication inputs
   const [isLogin, setIsLogin] = useState(true);
@@ -131,14 +137,20 @@ export function AppShell({ children }: { children: ReactNode }) {
       toast.error("Session expired. Please log in again.");
     };
 
+    const handleCurrencyUpdated = () => {
+      setActiveCurrency(localStorage.getItem("sokopulse_currency") || "USD");
+    };
+
     window.addEventListener("alerts-updated", fetchAlerts);
     window.addEventListener("profile-updated", handleProfileUpdated);
     window.addEventListener("auth-expired", handleAuthExpired);
+    window.addEventListener("currency-updated", handleCurrencyUpdated);
 
     return () => {
       window.removeEventListener("alerts-updated", fetchAlerts);
       window.removeEventListener("profile-updated", handleProfileUpdated);
       window.removeEventListener("auth-expired", handleAuthExpired);
+      window.removeEventListener("currency-updated", handleCurrencyUpdated);
     };
   }, [pathname]);
 
@@ -361,6 +373,22 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {isOffline ? "Standalone Mode" : "AI Live"}
               </span>
             </div>
+            {/* Currency Switcher */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const nextCurrency = activeCurrency === "USD" ? "KES" : "USD";
+                localStorage.setItem("sokopulse_currency", nextCurrency);
+                window.dispatchEvent(new Event("currency-updated"));
+                toast.success(`Currency switched to ${nextCurrency}`);
+              }}
+              className="font-mono text-xs font-semibold px-2.5 h-9 hover:bg-muted/60"
+              title="Toggle currency between USD ($) and KES (KES)"
+            >
+              {activeCurrency === "KES" ? "KES (KSh)" : "USD ($)"}
+            </Button>
+
             <Button
               variant="ghost"
               size="icon"
