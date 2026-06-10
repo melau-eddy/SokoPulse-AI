@@ -189,7 +189,46 @@ class CompetitorsView(APIView):
         competitors_list = []
         competitor_names = list(CompetitorData.objects.values_list("competitor_name", flat=True).distinct())
         if not competitor_names:
-            competitor_names = ["GlobalLogix", "Nexus Supply Pro", "Apex Trading Co.", "Meridian Imports"]
+            from api.models import Product
+            first_product = Product.objects.first()
+            industry_name = "Industrial"
+            if first_product:
+                from api.utils.dynamic_seeder import INDUSTRY_TEMPLATES
+                industry_name = first_product.category or "Industrial"
+                for ind_name, template in INDUSTRY_TEMPLATES.items():
+                    if any(item["name"] == first_product.product_name for item in template):
+                        industry_name = ind_name
+                        break
+            
+            currency = "USD"
+            try:
+                import os
+                file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "currency_setting.txt")
+                if os.path.exists(file_path):
+                    with open(file_path, "r") as f:
+                        currency = f.read().strip().upper()
+            except Exception:
+                pass
+
+            from api.scrapers.crawler import US_COMPETITORS, KENYAN_COMPETITORS
+            if currency == "KES":
+                competitor_names = KENYAN_COMPETITORS.get(industry_name)
+                if not competitor_names:
+                    competitor_names = [
+                        f"{industry_name} East Africa",
+                        f"Kenya {industry_name}",
+                        f"Nairobi {industry_name} Pro",
+                        f"Soko {industry_name}"
+                    ]
+            else:
+                competitor_names = US_COMPETITORS.get(industry_name)
+                if not competitor_names:
+                    competitor_names = [
+                        f"{industry_name} US",
+                        f"American {industry_name}",
+                        f"{industry_name} Pro USA",
+                        f"Apex {industry_name}"
+                    ]
             
         shares = [28, 19, 14, 11]
         trends = ["up", "flat", "up", "down"]
