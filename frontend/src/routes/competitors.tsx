@@ -51,6 +51,8 @@ import {
   competitors as seedCompetitors,
   competitorPrices as seedCompetitorPrices,
   pricingItems as seedPricingItems,
+  formatPrice,
+  fmtCurrency,
 } from "@/lib/mock-data";
 import { apiClient } from "../lib/api-client";
 import { toast } from "sonner";
@@ -72,6 +74,12 @@ function CompetitorsPage() {
   const [competitorPrices, setCompetitorPrices] =
     useState<any[]>(seedCompetitorPrices);
   const [pricingItems, setPricingItems] = useState<any[]>(seedPricingItems);
+  const [activeCurrency, setActiveCurrency] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sokopulse_currency") || "USD";
+    }
+    return "USD";
+  });
 
   useEffect(() => {
     apiClient.getCompetitors().then((res) => {
@@ -81,6 +89,14 @@ function CompetitorsPage() {
         if (res.pricingItems) setPricingItems(res.pricingItems);
       }
     });
+
+    const handleCurrencyUpdated = () => {
+      setActiveCurrency(localStorage.getItem("sokopulse_currency") || "USD");
+    };
+    window.addEventListener("currency-updated", handleCurrencyUpdated);
+    return () => {
+      window.removeEventListener("currency-updated", handleCurrencyUpdated);
+    };
   }, []);
 
   // Get active pricing item
@@ -212,13 +228,13 @@ function CompetitorsPage() {
           <KpiCard
             label="Cheapest Competitor"
             value={cheapestCompetitor.name}
-            hint={`Price: $${cheapestCompetitor.itemPrice.toLocaleString()} (Avg)`}
+            hint={`Price: ${formatPrice(cheapestCompetitor.itemPrice)} (Avg)`}
             accent="success"
           />
           <KpiCard
             label="Highest Competitor"
             value={highestCompetitor.name}
-            hint={`Price: $${highestCompetitor.itemPrice.toLocaleString()} (Avg)`}
+            hint={`Price: ${formatPrice(highestCompetitor.itemPrice)} (Avg)`}
             accent="warning"
           />
           <KpiCard
@@ -282,7 +298,7 @@ function CompetitorsPage() {
               </div>
               <div className="my-2">
                 <span className="text-2xl font-bold font-mono tracking-tight">
-                  ${c.itemPrice.toLocaleString()}
+                  {formatPrice(c.itemPrice)}
                 </span>
                 <span className="text-[10px] text-muted-foreground ml-1.5">
                   for {activeProduct.product}
@@ -338,7 +354,7 @@ function CompetitorsPage() {
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.name}</TableCell>
                     <TableCell className="text-right font-mono font-semibold">
-                      ${c.itemPrice.toLocaleString()}
+                      {formatPrice(c.itemPrice)}
                     </TableCell>
                     <TableCell
                       className={`text-right font-mono ${diff > 0 ? "text-success" : diff < 0 ? "text-destructive" : "text-muted-foreground"}`}
@@ -413,24 +429,20 @@ function CompetitorsPage() {
                         <p className="font-semibold text-xs">{item.product}</p>
                       </TableCell>
                       <TableCell className="text-right font-mono text-xs">
-                        ${item.currentPrice}
+                        {formatPrice(item.currentPrice)}
                       </TableCell>
                       <TableCell className="text-right font-mono text-xs">
-                        ${item.competitorAvg}
+                        {formatPrice(item.competitorAvg)}
                       </TableCell>
                       <TableCell className="text-right text-success font-mono text-xs font-semibold">
-                        +$
-                        {(item.recommendedPrice - item.currentPrice).toFixed(
-                          0,
-                        )}{" "}
-                        ({item.expectedImpact}%)
+                        +{formatPrice(item.recommendedPrice - item.currentPrice, 0)} ({item.expectedImpact}%)
                       </TableCell>
                       <TableCell className="text-right">
                         <Badge
                           variant="outline"
                           className="bg-primary/10 text-primary border-primary/20 text-[10px]"
                         >
-                          Raise to ${item.recommendedPrice}
+                          Raise to {formatPrice(item.recommendedPrice)}
                         </Badge>
                       </TableCell>
                     </TableRow>
