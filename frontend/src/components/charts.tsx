@@ -15,6 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { getCurrencySymbol, getCurrencyRate } from "@/lib/mock-data";
 
 const axisProps = {
   stroke: "var(--color-muted-foreground)",
@@ -48,10 +49,14 @@ export function SalesTrendChart({
           vertical={false}
         />
         <XAxis dataKey="month" {...axisProps} />
-        <YAxis {...axisProps} tickFormatter={(v) => `$${v / 1000}k`} />
+        <YAxis {...axisProps} tickFormatter={(v) => `${getCurrencySymbol()}${Math.round(v * getCurrencyRate() / 1000)}k`} />
         <Tooltip
           contentStyle={tooltipStyle}
           cursor={{ stroke: "var(--color-border)" }}
+          formatter={(value: any) => [
+            `${getCurrencySymbol()}${Math.round(Number(value) * getCurrencyRate()).toLocaleString()}`,
+            undefined
+          ]}
         />
         <Legend wrapperStyle={{ fontSize: 11 }} />
         <Line
@@ -176,10 +181,14 @@ export function RevenueBarChart({
           vertical={false}
         />
         <XAxis dataKey="category" {...axisProps} />
-        <YAxis {...axisProps} tickFormatter={(v) => `$${v / 1000}k`} />
+        <YAxis {...axisProps} tickFormatter={(v) => `${getCurrencySymbol()}${Math.round(v * getCurrencyRate() / 1000)}k`} />
         <Tooltip
           contentStyle={tooltipStyle}
           cursor={{ fill: "var(--color-muted)" }}
+          formatter={(value: any) => [
+            `${getCurrencySymbol()}${Math.round(Number(value) * getCurrencyRate()).toLocaleString()}`,
+            undefined
+          ]}
         />
         <Bar
           dataKey="revenue"
@@ -251,8 +260,14 @@ export function CompetitorPriceChart({
           vertical={false}
         />
         <XAxis dataKey="day" {...axisProps} />
-        <YAxis {...axisProps} tickFormatter={(v) => `$${v}`} />
-        <Tooltip contentStyle={tooltipStyle} />
+        <YAxis {...axisProps} tickFormatter={(v) => `${getCurrencySymbol()}${Math.round(v * getCurrencyRate()).toLocaleString()}`} />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          formatter={(value: any) => [
+            `${getCurrencySymbol()}${Math.round(Number(value) * getCurrencyRate()).toLocaleString()}`,
+            undefined
+          ]}
+        />
         <Legend wrapperStyle={{ fontSize: 11 }} />
         <Line
           type="monotone"

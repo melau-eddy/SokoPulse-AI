@@ -56,6 +56,12 @@ function ForecastingPage() {
     confidence: "±8.4%",
     version: "v3.2.1",
   });
+  const [activeCurrency, setActiveCurrency] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sokopulse_currency") || "USD";
+    }
+    return "USD";
+  });
 
   useEffect(() => {
     apiClient.getForecasting().then((res) => {
@@ -70,6 +76,14 @@ function ForecastingPage() {
         });
       }
     });
+
+    const handleCurrencyUpdated = () => {
+      setActiveCurrency(localStorage.getItem("sokopulse_currency") || "USD");
+    };
+    window.addEventListener("currency-updated", handleCurrencyUpdated);
+    return () => {
+      window.removeEventListener("currency-updated", handleCurrencyUpdated);
+    };
   }, []);
 
   // Dynamic forecast based on sliders
