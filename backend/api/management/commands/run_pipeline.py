@@ -10,12 +10,15 @@ class Command(BaseCommand):
         parser.add_argument(
             "--industry",
             type=str,
-            default="Industrial",
+            default=None,
             help="Define the line of business/industry target for scraping",
         )
 
     def handle(self, *args, **options):
-        industry = options.get("industry", "Industrial")
+        industry = options.get("industry")
+        if not industry:
+            from api.utils.dynamic_seeder import get_active_industry
+            industry = get_active_industry()
         self.stdout.write(f"🕸️ 1. Dispatching Competitor Pricing Crawler for {industry}...")
         try:
             scrape_competitor_prices(industry=industry)

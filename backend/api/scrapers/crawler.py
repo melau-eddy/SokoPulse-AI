@@ -35,19 +35,36 @@ def scrape_competitor_prices(industry=None, competitors=None, currency=None):
     If currency is KES, scrapes competitors within the Kenyan market.
     If currency is USD (or other defaults), scrapes competitors within the US market.
     """
-    products = Product.objects.all()
-    if not products.exists():
-        print("ℹ️ No products registered to compile competitor benchmarks.")
-        return
-
-    # Clear existing competitor data to avoid mixing up different industries/lines of business
-    CompetitorData.objects.all().delete()
-
-    # Normalize industry input
+    # Normalize and determine active industry
     industry_key = "Industrial"
+    if not industry:
+        try:
+            from api.utils.dynamic_seeder import get_active_industry
+            industry = get_active_industry()
+        except Exception as e:
+            print(f"⚠️ Failed to get active industry: {e}")
+    
     if industry:
         normalized = str(industry).strip().title()
         industry_key = normalized
+
+    # Filter products to strictly belong to the indicated industry template or custom template
+    from api.utils.dynamic_seeder import INDUSTRY_TEMPLATES, generate_custom_products
+    products = Product.objects.all()
+    if industry_key in INDUSTRY_TEMPLATES:
+        template_names = {item["name"] for item in INDUSTRY_TEMPLATES[industry_key]}
+        products = products.filter(product_name__in=template_names)
+    else:
+        custom_items = generate_custom_products(industry_key)
+        custom_names = {item["name"] for item in custom_items}
+        products = products.filter(product_name__in=custom_names)
+
+    if not products.exists():
+        print(f"ℹ️ No products registered for industry '{industry_key}' to compile competitor benchmarks.")
+        return
+
+    # Clear existing competitor data for these products to avoid mixing up different industries
+    CompetitorData.objects.filter(product__in=products).delete()
 
     # Fallback to read currency from file if not passed
     if not currency:

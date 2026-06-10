@@ -122,6 +122,16 @@ def generate_custom_products(industry_name):
 
 def seed_for_industry(industry_name):
     """Wipes the database and dynamic seeds all operational records for the target industry."""
+    # Write to industry_setting.txt first to keep it in sync
+    try:
+        import os
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        file_path = os.path.join(base_dir, "industry_setting.txt")
+        with open(file_path, "w") as f:
+            f.write(str(industry_name).strip())
+    except Exception as e:
+        print(f"⚠️ Failed to save industry setting to file: {e}")
+
     # 1. Clear database
     Sales.objects.all().delete()
     Inventory.objects.all().delete()
@@ -262,3 +272,103 @@ def seed_for_industry(industry_name):
             resolved=False,
             time_label="Just now",
         )
+
+
+def get_active_industry():
+    """Reads the active industry name from industry_setting.txt, or falls back to database auto-detection."""
+    import os
+    try:
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        file_path = os.path.join(base_dir, "industry_setting.txt")
+        if os.path.exists(file_path):
+            with open(file_path, "r") as f:
+                val = f.read().strip()
+                if val:
+                    return val
+    except Exception as e:
+        print(f"⚠️ Failed to read industry setting file: {e}")
+
+    # Auto-detect from database if file read fails or is empty
+    try:
+        from api.models import Product, Supplier
+        first_supplier = Supplier.objects.first()
+        if first_supplier:
+            name = first_supplier.supplier_name
+            # Suffixes to remove
+            for suffix in [" Global Ltd", " Supply", " Iron Bridge ", " VoltCore ", "Direct", " Solutions", " Pro", " Apex "]:
+                if suffix in name:
+                    name = name.replace(suffix, "")
+            # Clean up prefixes
+            for prefix in ["Iron Bridge ", "Quantum ", "VoltCore "]:
+                if name.startswith(prefix):
+                    name = name[len(prefix):]
+            if name.strip():
+                return name.strip()
+
+        first_product = Product.objects.first()
+        if first_product:
+            for ind_name, template in INDUSTRY_TEMPLATES.items():
+                if any(item["name"] == first_product.product_name for item in template):
+                    return ind_name
+            
+            # Fallback to product name or category
+            name = first_product.product_name
+            if " Item" in name:
+                parts = name.replace(" Item", "").split()
+                if len(parts) >= 2:
+                    return " ".join(parts[1:])
+            
+            return first_product.category or "Industrial"
+    except Exception:
+        pass
+
+    return "Industrial"
+
+
+def get_valid_competitors(industry_name=None, currency=None):
+    """Returns the set of valid competitor names for the active or given industry/currency."""
+    if not industry_name:
+        industry_name = get_active_industry()
+
+    if not currency:
+        import os
+        try:
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            file_path = os.path.join(base_dir, "currency_setting.txt")
+            if os.path.exists(file_path):
+                with open(file_path, "r") as f:
+                    currency = f.read().strip().upper()
+        except Exception:
+            pass
+        if not currency:
+            currency = "USD"
+
+    from api.scrapers.crawler import US_COMPETITORS, KENYAN_COMPETITORS
+    normalized = str(industry_name).strip().title()
+
+    # 1. Seeder names
+    seeder_names = [
+        f"{normalized}Direct",
+        f"Bio{normalized} Solutions",
+        f"{normalized} Pro",
+        f"Apex {normalized}"
+    ]
+
+    # 2. Crawler names
+    if currency == "KES":
+        crawler_names = KENYAN_COMPETITORS.get(normalized, [
+            f"{normalized} East Africa",
+            f"Kenya {normalized}",
+            f"Nairobi {normalized} Pro",
+            f"Soko {normalized}"
+        ])
+    else:
+        crawler_names = US_COMPETITORS.get(normalized, [
+            f"{normalized} US",
+            f"American {normalized}",
+            f"{normalized} Pro USA",
+            f"Apex {normalized}"
+        ])
+
+    return set(seeder_names + crawler_names)
+

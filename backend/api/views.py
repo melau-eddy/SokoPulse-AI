@@ -86,8 +86,24 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
 
 
 class CompetitorDataViewSet(viewsets.ModelViewSet):
-    queryset = CompetitorData.objects.all()
     serializer_class = CompetitorDataSerializer
+
+    def get_queryset(self):
+        from api.utils.dynamic_seeder import get_active_industry, get_valid_competitors
+        industry_name = get_active_industry()
+        
+        currency = "USD"
+        try:
+            import os
+            file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "currency_setting.txt")
+            if os.path.exists(file_path):
+                with open(file_path, "r") as f:
+                    currency = f.read().strip().upper()
+        except Exception:
+            pass
+
+        valid_comps = get_valid_competitors(industry_name, currency)
+        return CompetitorData.objects.filter(competitor_name__in=valid_comps)
 
 
 class AIRecommendationViewSet(viewsets.ModelViewSet):
@@ -168,7 +184,20 @@ class DashboardKpisView(APIView):
         stock_out_risk = Product.objects.filter(status__in=["critical", "low"]).count()
         overstocked = Product.objects.filter(status="overstocked").count()
         active_suppliers = Supplier.objects.count()
-        competitors_tracked = CompetitorData.objects.values("competitor_name").distinct().count()
+        # Get active industry and currency
+        from api.utils.dynamic_seeder import get_active_industry, get_valid_competitors
+        industry_name = get_active_industry()
+        currency = "USD"
+        try:
+            import os
+            file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "currency_setting.txt")
+            if os.path.exists(file_path):
+                with open(file_path, "r") as f:
+                    currency = f.read().strip().upper()
+        except Exception:
+            pass
+        valid_comps = get_valid_competitors(industry_name, currency)
+        competitors_tracked = CompetitorData.objects.filter(competitor_name__in=valid_comps).values("competitor_name").distinct().count()
 
         kpis = {
             "inventoryValue": float(total_inv_value) if total_inv_value > 0 else 4281090,
@@ -187,29 +216,28 @@ class CompetitorsView(APIView):
     def get(self, request):
         # 1. Competitor objects
         competitors_list = []
-        competitor_names = list(CompetitorData.objects.values_list("competitor_name", flat=True).distinct())
-        if not competitor_names:
-            from api.models import Product
-            first_product = Product.objects.first()
-            industry_name = "Industrial"
-            if first_product:
-                from api.utils.dynamic_seeder import INDUSTRY_TEMPLATES
-                industry_name = first_product.category or "Industrial"
-                for ind_name, template in INDUSTRY_TEMPLATES.items():
-                    if any(item["name"] == first_product.product_name for item in template):
-                        industry_name = ind_name
-                        break
-            
-            currency = "USD"
-            try:
-                import os
-                file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "currency_setting.txt")
-                if os.path.exists(file_path):
-                    with open(file_path, "r") as f:
-                        currency = f.read().strip().upper()
-            except Exception:
-                pass
+        
+        from api.utils.dynamic_seeder import get_active_industry, get_valid_competitors
+        industry_name = get_active_industry()
+        
+        currency = "USD"
+        try:
+            import os
+            file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "currency_setting.txt")
+            if os.path.exists(file_path):
+                with open(file_path, "r") as f:
+                    currency = f.read().strip().upper()
+        except Exception:
+            pass
 
+        valid_comps = get_valid_competitors(industry_name, currency)
+
+        competitor_names = list(
+            CompetitorData.objects.filter(competitor_name__in=valid_comps)
+            .values_list("competitor_name", flat=True)
+            .distinct()
+        )
+        if not competitor_names:
             from api.scrapers.crawler import US_COMPETITORS, KENYAN_COMPETITORS
             if currency == "KES":
                 competitor_names = KENYAN_COMPETITORS.get(industry_name)
@@ -270,7 +298,7 @@ class CompetitorsView(APIView):
         products = Product.objects.all()
         for idx, p in enumerate(products):
             # Calculate competitor avg
-            avg_price = CompetitorData.objects.filter(product=p).aggregate(Avg("price"))["price__avg"] or (p.unit_price * Decimal("1.02"))
+            avg_price = CompetitorData.objects.filter(product=p, competitor_name__in=valid_comps).aggregate(Avg("price"))["price__avg"] or (p.unit_price * Decimal("1.02"))
             
             pricing_items.append({
                 "id": str(p.id),
@@ -323,7 +351,17 @@ class CompetitorsView(APIView):
 
             competitors = request.data.get("competitors")
             currency = request.data.get("currency")
-            
+
+            # Persist industry setting locally to survive periodic celery beat tasks
+            if industry_name:
+                try:
+                    import os
+                    file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "industry_setting.txt")
+                    with open(file_path, "w") as f:
+                        f.write(industry_name.strip())
+                except Exception as e:
+                    print(f"⚠️ Failed to save industry setting to file: {e}")
+
             # Persist currency setting locally to survive periodic celery beat tasks
             if currency:
                 try:
@@ -464,6 +502,21 @@ class ForecastingView(APIView):
 
 class PricingView(APIView):
     def get(self, request):
+        from api.utils.dynamic_seeder import get_active_industry, get_valid_competitors
+        industry_name = get_active_industry()
+        
+        currency = "USD"
+        try:
+            import os
+            file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "currency_setting.txt")
+            if os.path.exists(file_path):
+                with open(file_path, "r") as f:
+                    currency = f.read().strip().upper()
+        except Exception:
+            pass
+
+        valid_comps = get_valid_competitors(industry_name, currency)
+
         recommendations = AIRecommendation.objects.filter(recommendation_type="price")
         data = []
         
@@ -471,7 +524,7 @@ class PricingView(APIView):
             products = Product.objects.all()[:5]
             for p in products:
                 # Find competitor avg
-                comps = CompetitorData.objects.filter(product=p)
+                comps = CompetitorData.objects.filter(product=p, competitor_name__in=valid_comps)
                 comp_avg = comps.aggregate(Avg("price"))["price__avg"] or (p.unit_price * Decimal("1.02"))
                 
                 AIRecommendation.objects.create(
@@ -484,31 +537,13 @@ class PricingView(APIView):
             recommendations = AIRecommendation.objects.filter(recommendation_type="price")
             
         # Determine the current industry dynamically
-        first_product = Product.objects.first()
-        industry = "Industrial"
-        if first_product:
-            name_lower = first_product.product_name.lower()
-            sku_lower = first_product.sku.lower()
-            if "rose" in name_lower or "lily" in name_lower or "tulip" in name_lower or "flw" in sku_lower:
-                industry = "Flowers"
-            elif "aspirin" in name_lower or "amoxicillin" in name_lower or "vitamin c" in name_lower or "asp" in sku_lower:
-                industry = "Pharmaceuticals"
-            elif "apple" in name_lower or "milk" in name_lower or "bread" in name_lower or "apl" in sku_lower:
-                industry = "Retail"
-            elif "mask" in name_lower or "glove" in name_lower or "thermometer" in name_lower or "msk" in sku_lower:
-                industry = "Healthcare"
-            elif "cement" in name_lower or "rebar" in name_lower or "pine" in name_lower or "cmt" in sku_lower:
-                industry = "Construction"
-            elif "optical sensor" in name_lower or "neural" in name_lower or "apx" in sku_lower:
-                industry = "Industrial"
-            else:
-                industry = first_product.category.title() or "Industrial"
-
+        industry = industry_name
+        
         for r in recommendations:
             product = r.product
             rec_price = product.unit_price * Decimal("1.05")
             
-            comps = CompetitorData.objects.filter(product=product)
+            comps = CompetitorData.objects.filter(product=product, competitor_name__in=valid_comps)
             comp_avg = comps.aggregate(Avg("price"))["price__avg"] or (product.unit_price * Decimal("1.02"))
             
             margin = r.override_margin if r.override_margin is not None else Decimal("32")
@@ -669,6 +704,16 @@ class SettingsIndustryView(APIView):
             if not industry_name:
                 return Response({"error": "Industry name is required"}, status=status.HTTP_400_BAD_REQUEST)
             
+            # Persist industry setting locally to survive periodic celery beat tasks
+            if industry_name:
+                try:
+                    import os
+                    file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "industry_setting.txt")
+                    with open(file_path, "w") as f:
+                        f.write(industry_name.strip())
+                except Exception as e:
+                    print(f"⚠️ Failed to save industry setting to file: {e}")
+
             # Persist currency setting locally to survive periodic celery beat tasks
             if currency:
                 try:

@@ -26,10 +26,26 @@ MODEL_PATH = os.path.join(MODEL_DIR, "demand_model.joblib")
 
 def extract_data_to_df():
     """Extracts relational Django models into Pandas DataFrames for ETL processing."""
+    from api.utils.dynamic_seeder import get_active_industry, get_valid_competitors
+    industry_name = get_active_industry()
+    
+    currency = "USD"
+    try:
+        import os
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        file_path = os.path.join(base_dir, "currency_setting.txt")
+        if os.path.exists(file_path):
+            with open(file_path, "r") as f:
+                currency = f.read().strip().upper()
+    except Exception:
+        pass
+
+    valid_comps = get_valid_competitors(industry_name, currency)
+
     products = Product.objects.all().values()
     sales = Sales.objects.all().values()
     inventory = Inventory.objects.all().values()
-    competitors = CompetitorData.objects.all().values()
+    competitors = CompetitorData.objects.filter(competitor_name__in=valid_comps).values()
 
     df_products = pd.DataFrame(list(products))
     df_sales = pd.DataFrame(list(sales))
@@ -164,7 +180,22 @@ def run_intelligence_pipeline():
 
         # B. Dynamic Pricing Engine (Phase 7)
         # Look up competitor prices
-        comps = CompetitorData.objects.filter(product=product)
+        from api.utils.dynamic_seeder import get_active_industry, get_valid_competitors
+        industry_name = get_active_industry()
+        
+        currency = "USD"
+        try:
+            import os
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            file_path = os.path.join(base_dir, "currency_setting.txt")
+            if os.path.exists(file_path):
+                with open(file_path, "r") as f:
+                    currency = f.read().strip().upper()
+        except Exception:
+            pass
+
+        valid_comps = get_valid_competitors(industry_name, currency)
+        comps = CompetitorData.objects.filter(product=product, competitor_name__in=valid_comps)
         if comps.exists():
             avg_comp_price = Decimal(str(comps.aggregate(Avg("price"))["price__avg"]))
             price_delta = avg_comp_price - product.unit_price
