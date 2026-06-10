@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Check, X, Pencil, Sparkles, TrendingUp, Info } from "lucide-react";
+import { Check, X, Pencil, Sparkles, TrendingUp, Info, Activity, Globe, Calendar, Truck, DollarSign, Percent, AlertCircle } from "lucide-react";
 import { PageHeader } from "@/components/app-shell";
 import { SectionCard, KpiCard } from "@/components/widgets";
 import { Button } from "@/components/ui/button";
@@ -61,12 +61,14 @@ function PricingPage() {
   const [simulationMultiplier, setSimulationMultiplier] = useState<number[]>([
     100,
   ]); // percentage of recommended adjustment (50% to 150%)
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   // Load pricing recommendations from backend
   useEffect(() => {
     apiClient.getPricing().then((data) => {
       if (data && data.length > 0) {
         setItems(data);
+        setSelectedItemId(data[0].id);
       }
     });
   }, []);
@@ -280,7 +282,15 @@ function PricingPage() {
                       const delta = displayPrice - p.currentPrice;
 
                       return (
-                        <TableRow key={p.id}>
+                        <TableRow
+                          key={p.id}
+                          onClick={() => setSelectedItemId(p.id)}
+                          className={`cursor-pointer transition-colors duration-150 ${
+                            selectedItemId === p.id
+                              ? "bg-primary/5 hover:bg-primary/10 border-l-2 border-l-primary"
+                              : "hover:bg-muted/50"
+                          }`}
+                        >
                           <TableCell className="font-medium">
                             <div className="flex flex-col gap-1.5 py-1">
                               <div className="flex items-center">
@@ -462,8 +472,136 @@ function PricingPage() {
             </SectionCard>
           </div>
 
-          {/* Elasticity Simulator */}
-          <div>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Real-time Pricing Drivers Audit */}
+            {(() => {
+              const selectedItem = items.find((i) => i.id === selectedItemId) || items[0];
+              if (!selectedItem) return null;
+              
+              return (
+                <SectionCard
+                  title={
+                    <span className="flex items-center gap-1.5 text-base font-semibold text-foreground">
+                      <Activity className="size-4.5 text-primary animate-pulse" />
+                      Real-time Pricing Drivers
+                    </span>
+                  }
+                  description="Dynamic audit details justifying the recommended target price"
+                >
+                  <div className="space-y-4 py-2 text-sm">
+                    {/* Header product info */}
+                    <div className="p-3 bg-primary/5 rounded-lg border border-primary/15">
+                      <div className="flex justify-between items-start mb-1.5">
+                        <h4 className="font-bold text-foreground truncate max-w-[180px]">
+                          {selectedItem.product}
+                        </h4>
+                        <Badge variant="outline" className="text-[10px] font-mono capitalize">
+                          Status: {selectedItem.status}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1.5 border-t border-border/50">
+                        <div>
+                          <span className="text-muted-foreground block text-[9px] uppercase">Current</span>
+                          <span className="font-mono font-semibold">${selectedItem.currentPrice.toFixed(2)}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[9px] uppercase">Advised</span>
+                          <span className="font-mono font-bold text-primary">${(selectedItem.overridePrice ?? selectedItem.recommendedPrice).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AI Explanation Box */}
+                    {selectedItem.recommendationText && (
+                      <div className="p-3 bg-muted/40 rounded-lg border border-border text-xs leading-relaxed text-muted-foreground space-y-1">
+                        <span className="font-semibold text-foreground flex items-center gap-1">
+                          <AlertCircle className="size-3.5 text-primary" />
+                          AI Recommendation Rationale
+                        </span>
+                        <p>{selectedItem.recommendationText}</p>
+                      </div>
+                    )}
+
+                    {/* Factors Grid */}
+                    <div className="space-y-3 pt-1">
+                      {/* Elasticity */}
+                      {selectedItem.demandElasticity && (
+                        <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/40 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <span className="p-1 rounded bg-blue-500/10 text-blue-400">
+                              <Percent className="size-3.5" />
+                            </span>
+                            <div className="text-left">
+                              <span className="text-xs font-semibold text-foreground block">Price Elasticity</span>
+                              <span className="text-[10px] text-muted-foreground">Demand volume sensitivity</span>
+                            </div>
+                          </div>
+                          <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/5 px-2 py-0.5 rounded border border-blue-500/10">
+                            {selectedItem.demandElasticity}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Seasonality */}
+                      {selectedItem.seasonalityFactor && (
+                        <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/40 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <span className="p-1 rounded bg-amber-500/10 text-amber-400">
+                              <Calendar className="size-3.5" />
+                            </span>
+                            <div className="text-left">
+                              <span className="text-xs font-semibold text-foreground block">Seasonality Index</span>
+                              <span className="text-[10px] text-muted-foreground">Temporal demand variations</span>
+                            </div>
+                          </div>
+                          <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">
+                            {selectedItem.seasonalityFactor}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Supplier Cost */}
+                      {selectedItem.supplierCostFactor && (
+                        <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/40 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <span className="p-1 rounded bg-purple-500/10 text-purple-400">
+                              <Truck className="size-3.5" />
+                            </span>
+                            <div className="text-left">
+                              <span className="text-xs font-semibold text-foreground block">Supplier Costs</span>
+                              <span className="text-[10px] text-muted-foreground">Logistics & supply margins</span>
+                            </div>
+                          </div>
+                          <span className="font-mono text-xs font-bold text-purple-400 bg-purple-500/5 px-2 py-0.5 rounded border border-purple-500/10">
+                            {selectedItem.supplierCostFactor}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* External/Macro Factors */}
+                      {selectedItem.externalFactor && (
+                        <div className="p-2.5 rounded-md bg-emerald-500/5 border border-emerald-500/10 space-y-1">
+                          <div className="flex items-center gap-2 text-emerald-400">
+                            <Globe className="size-3.5" />
+                            <span className="text-xs font-semibold">External Market Factor</span>
+                          </div>
+                          <p className="text-[11px] leading-relaxed text-muted-foreground pl-5">
+                            {selectedItem.externalFactor}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-[10px] text-center text-muted-foreground italic pt-1 border-t border-border/40">
+                      💡 Click any item in the pricing table to audit its drivers
+                    </p>
+                  </div>
+                </SectionCard>
+              );
+            })()}
+
+            {/* Elasticity Simulator */}
             <SectionCard
               title={
                 <span className="flex items-center gap-1.5">

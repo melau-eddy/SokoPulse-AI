@@ -66,6 +66,7 @@ export interface PricingItem {
   seasonalityFactor?: string;
   supplierCostFactor?: string;
   externalFactor?: string;
+  recommendationText?: string;
 }
 
 export interface ProcurementItem {

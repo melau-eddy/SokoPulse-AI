@@ -538,6 +538,7 @@ class PricingView(APIView):
                 "seasonalityFactor": seasonality,
                 "supplierCostFactor": supplier_cost,
                 "externalFactor": external,
+                "recommendationText": r.recommendation_text,
             })
             
         return Response(data)
