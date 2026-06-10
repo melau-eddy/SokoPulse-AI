@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { apiClient } from "../lib/api-client";
 import { toast } from "sonner";
+import { formatPrice, fmtCurrency } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({ meta: [{ title: "Reports — SokoPulse AI" }] }),
@@ -59,7 +60,7 @@ const reportsData: ReportMeta[] = [
         name: "Apex-9 Optical Sensor",
         category: "Electronics",
         stock: 14,
-        value: "$16,786",
+        value: 16786,
         status: "Critical",
       },
       {
@@ -67,7 +68,7 @@ const reportsData: ReportMeta[] = [
         name: "Titan Grade Castings",
         category: "Industrial",
         stock: 142,
-        value: "$12,638",
+        value: 12638,
         status: "Low",
       },
       {
@@ -75,7 +76,7 @@ const reportsData: ReportMeta[] = [
         name: "Neural Engine Core v2",
         category: "Electronics",
         stock: 890,
-        value: "$2,180,500",
+        value: 2180500,
         status: "Healthy",
       },
       {
@@ -83,7 +84,7 @@ const reportsData: ReportMeta[] = [
         name: "Ceramic Capacitor 220uF",
         category: "Electronics",
         stock: 85000,
-        value: "$35,700",
+        value: 35700,
         status: "Overstocked",
       },
     ],
@@ -99,32 +100,32 @@ const reportsData: ReportMeta[] = [
         Date: "2026-06-09",
         product: "Neural Engine Core v2",
         qty: 12,
-        price: "$2,450.00",
-        revenue: "$29,400.00",
+        price: 2450.00,
+        revenue: 29400.00,
         channel: "Direct",
       },
       {
         Date: "2026-06-09",
         product: "Apex-9 Optical Sensor",
         qty: 42,
-        price: "$1,199.00",
-        revenue: "$50,358.00",
+        price: 1199.00,
+        revenue: 50358.00,
         channel: "Distributor",
       },
       {
         Date: "2026-06-08",
         product: "Smart Hub Z-Wave",
         qty: 18,
-        price: "$149.00",
-        revenue: "$2,682.00",
+        price: 149.00,
+        revenue: 2682.00,
         channel: "E-Commerce",
       },
       {
         Date: "2026-06-08",
         product: "Solar-X Panel 400W",
         qty: 5,
-        price: "$489.00",
-        revenue: "$2,445.00",
+        price: 489.00,
+        revenue: 2445.00,
         channel: "Direct",
       },
     ],
@@ -145,33 +146,33 @@ const reportsData: ReportMeta[] = [
     data: [
       {
         product: "Apex-9 Optical Sensor",
-        base: "$1,199.00",
-        new: "$1,259.00",
-        competitor: "$1,248.00",
+        base: 1199.00,
+        new: 1259.00,
+        competitor: 1248.00,
         lift: "+4.8%",
         status: "Approved",
       },
       {
         product: "Smart Hub Z-Wave",
-        base: "$149.00",
-        new: "$159.00",
-        competitor: "$162.00",
+        base: 149.00,
+        new: 159.00,
+        competitor: 162.00,
         lift: "+6.4%",
         status: "Approved",
       },
       {
         product: "Solar-X Panel 400W",
-        base: "$489.00",
-        new: "$469.00",
-        competitor: "$462.00",
+        base: 489.00,
+        new: 469.00,
+        competitor: 462.00,
         lift: "-2.1%",
         status: "Overridden",
       },
       {
         product: "Neural Engine Core v2",
-        base: "$2,450.00",
-        new: "$2,520.00",
-        competitor: "$2,495.00",
+        base: 2450.00,
+        new: 2520.00,
+        competitor: 2495.00,
         lift: "+3.2%",
         status: "Approved",
       },
@@ -244,7 +245,7 @@ const reportsData: ReportMeta[] = [
         product: "Titan Grade Castings",
         supplier: "Iron Bridge Co.",
         qty: 120,
-        cost: "$10,680",
+        cost: 10680,
         status: "In Transit",
       },
       {
@@ -252,7 +253,7 @@ const reportsData: ReportMeta[] = [
         product: "Lithium Cell Mod-8",
         supplier: "VoltCore Industries",
         qty: 300,
-        cost: "$23,400",
+        cost: 23400,
         status: "Delayed (Customs)",
       },
       {
@@ -260,7 +261,7 @@ const reportsData: ReportMeta[] = [
         product: "Apex-9 Optical Sensor",
         supplier: "Nexus Supply",
         qty: 240,
-        cost: "$287,760",
+        cost: 287760,
         status: "Awaiting Conf.",
       },
     ],
@@ -303,16 +304,55 @@ const reportsData: ReportMeta[] = [
   },
 ];
 
+function formatSeedRow(reportId: string, row: any) {
+  if (reportId === "inv") {
+    return {
+      ...row,
+      value: formatPrice(Number(row.value), 0),
+    };
+  }
+  if (reportId === "sal") {
+    return {
+      ...row,
+      price: formatPrice(Number(row.price)),
+      revenue: formatPrice(Number(row.revenue)),
+    };
+  }
+  if (reportId === "prc") {
+    return {
+      ...row,
+      base: formatPrice(Number(row.base)),
+      new: formatPrice(Number(row.new)),
+      competitor: formatPrice(Number(row.competitor)),
+    };
+  }
+  if (reportId === "prc2") {
+    return {
+      ...row,
+      cost: formatPrice(Number(row.cost), 0),
+    };
+  }
+  return row;
+}
+
 function ReportsPage() {
   const [selectedReportId, setSelectedReportId] = useState<string>("inv");
   const [exportingType, setExportingType] = useState<string | null>(null);
+  const [activeCurrency, setActiveCurrency] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sokopulse_currency") || "USD";
+    }
+    return "USD";
+  });
 
   const activeReport =
     reportsData.find((r) => r.id === selectedReportId) ?? reportsData[0];
-  const [reportRows, setReportRows] = useState<any[]>(activeReport.data);
+  const [reportRows, setReportRows] = useState<any[]>(() =>
+    activeReport.data.map((row) => formatSeedRow(activeReport.id, row))
+  );
 
   useEffect(() => {
-    setReportRows(activeReport.data); // Reset immediately to seed data, then hydrate from backend
+    setReportRows(activeReport.data.map((row) => formatSeedRow(activeReport.id, row))); // Reset immediately to seed data, then hydrate from backend
 
     if (selectedReportId === "inv") {
       Promise.all([apiClient.getProducts(), apiClient.getInventory()]).then(
@@ -327,7 +367,7 @@ function ReportsPage() {
                 name: p.product_name,
                 category: p.category,
                 stock: stock,
-                value: `$${value.toLocaleString()}`,
+                value: formatPrice(value, 0),
                 status: p.status.charAt(0).toUpperCase() + p.status.slice(1),
               };
             });
@@ -342,8 +382,8 @@ function ReportsPage() {
             Date: s.transaction_date.split("T")[0],
             product: s.product_name || "Unknown Product",
             qty: s.quantity_sold,
-            price: `$${Number(s.selling_price).toFixed(2)}`,
-            revenue: `$${(s.quantity_sold * Number(s.selling_price)).toLocaleString()}`,
+            price: formatPrice(Number(s.selling_price)),
+            revenue: formatPrice(s.quantity_sold * Number(s.selling_price)),
             channel: "Direct",
           }));
           setReportRows(mapped);
@@ -354,9 +394,9 @@ function ReportsPage() {
         if (pricing && pricing.length > 0) {
           const mapped = pricing.map((p: any) => ({
             product: p.product,
-            base: `$${p.currentPrice.toFixed(2)}`,
-            new: `$${p.recommendedPrice.toFixed(2)}`,
-            competitor: `$${p.competitorAvg.toFixed(2)}`,
+            base: formatPrice(p.currentPrice),
+            new: formatPrice(p.recommendedPrice),
+            competitor: formatPrice(p.competitorAvg),
             lift: `${p.expectedImpact >= 0 ? "+" : ""}${p.expectedImpact}%`,
             status: p.status.charAt(0).toUpperCase() + p.status.slice(1),
           }));
@@ -371,7 +411,7 @@ function ReportsPage() {
             product: po.product_name || "Unknown Product",
             supplier: po.supplier_name || "Unknown Supplier",
             qty: po.qty,
-            cost: `$${Number(po.cost).toLocaleString()}`,
+            cost: formatPrice(Number(po.cost), 0),
             status: po.status.charAt(0).toUpperCase() + po.status.slice(1),
           }));
           setReportRows(mapped);
@@ -405,7 +445,15 @@ function ReportsPage() {
         }
       });
     }
-  }, [selectedReportId]);
+
+    const handleCurrencyUpdated = () => {
+      setActiveCurrency(localStorage.getItem("sokopulse_currency") || "USD");
+    };
+    window.addEventListener("currency-updated", handleCurrencyUpdated);
+    return () => {
+      window.removeEventListener("currency-updated", handleCurrencyUpdated);
+    };
+  }, [selectedReportId, activeCurrency]);
 
   const handleExport = (reportTitle: string, format: string) => {
     const key = `${reportTitle}-${format}`;
