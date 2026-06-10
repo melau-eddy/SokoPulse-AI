@@ -12,6 +12,13 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { apiClient } from "../lib/api-client";
 import { RefreshCw } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — SokoPulse AI" }] }),
@@ -203,11 +210,18 @@ function SettingsPage() {
             </div>
             <div className="grid gap-1.5 mt-4">
               <Label htmlFor="org-currency">Default currency</Label>
-              <Input
-                id="org-currency"
+              <Select
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-              />
+                onValueChange={(val) => setCurrency(val)}
+              >
+                <SelectTrigger id="org-currency" className="w-full">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD ($) - US Dollar</SelectItem>
+                  <SelectItem value="KES">KES (KSh) - Kenyan Shilling</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-1.5 mt-4">
               <Label htmlFor="org-timezone">Timezone</Label>
@@ -226,6 +240,7 @@ function SettingsPage() {
                   localStorage.setItem("sokopulse_industry", industry);
                   localStorage.setItem("sokopulse_currency", currency);
                   localStorage.setItem("sokopulse_timezone", timezone);
+                  window.dispatchEvent(new Event("currency-updated"));
                   
                   // Clean up competitor display names from settings URLs
                   const competitorNames = competitorUrls
