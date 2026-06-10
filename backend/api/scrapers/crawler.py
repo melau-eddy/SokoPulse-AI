@@ -7,16 +7,17 @@ from datetime import datetime
 
 from api.models import Product, CompetitorData
 
-# Monitored competitor targets grouped by industry/line of business
-INDUSTRY_COMPETITORS = {
-    "Electronics": ["GlobalLogix", "Nexus Supply Pro", "Apex Trading Co.", "Meridian Imports"],
-    "Pharmaceuticals": ["PharmaDirect", "BioHealth Solutions", "Medline Corp", "Apex Pharma"],
-    "Retail": ["MegaMart", "ValueSupermarket", "GrocerPlus", "FreshFoods Co"],
-    "Healthcare": ["BioHealth Solutions", "Medline Corp", "Apex Pharma", "CareSupply"],
-    "Construction": ["IndustrialBuild", "IronBridge Castings", "VoltMaterials", "BuildCorp"],
-    "Industrial": ["GlobalLogix", "Nexus Supply Pro", "Apex Trading Co.", "Meridian Imports"]
+# Monitored US competitor targets grouped by industry/line of business
+US_COMPETITORS = {
+    "Electronics": ["Amazon US", "Best Buy", "Newegg", "B&H Photo Video"],
+    "Pharmaceuticals": ["CVS Pharmacy", "Walgreens", "Rite Aid", "Walmart Pharmacy"],
+    "Retail": ["Walmart", "Target", "Costco Wholesale", "Kroger"],
+    "Healthcare": ["McKesson Corp", "Cardinal Health", "AmerisourceBergen", "Henry Schein"],
+    "Construction": ["Home Depot", "Lowe's", "Menards", "Builders FirstSource"],
+    "Industrial": ["Grainger", "McMaster-Carr", "MSC Industrial", "Fastenal"]
 }
 
+# Monitored Kenyan competitor targets grouped by industry/line of business
 KENYAN_COMPETITORS = {
     "Electronics": ["Jumia Kenya", "Kilimall", "Masoko", "Aviye Electronics"],
     "Pharmaceuticals": ["MyDawa", "GoodLife Pharmacy", "Haltons Pharmacy", "Kasha Kenya"],
@@ -32,6 +33,7 @@ def scrape_competitor_prices(industry=None, competitors=None, currency=None):
     Phase 6: Competitor Intelligence Module.
     Scrapes competitor web catalogs or generates normalized benchmarks for each product.
     If currency is KES, scrapes competitors within the Kenyan market.
+    If currency is USD (or other defaults), scrapes competitors within the US market.
     """
     products = Product.objects.all()
     if not products.exists():
@@ -72,13 +74,14 @@ def scrape_competitor_prices(industry=None, competitors=None, currency=None):
                     f"Soko {industry_key}"
                 ]
         else:
-            competitors = INDUSTRY_COMPETITORS.get(industry_key)
+            # Default to US market competitors for USD
+            competitors = US_COMPETITORS.get(industry_key)
             if not competitors:
-                # Dynamically generate 4 competitor names for the custom industry
+                # Dynamically generate 4 competitor names for the custom industry in US
                 competitors = [
-                    f"{industry_key}Direct",
-                    f"Bio{industry_key} Solutions",
-                    f"{industry_key} Pro",
+                    f"{industry_key} US",
+                    f"American {industry_key}",
+                    f"{industry_key} Pro USA",
                     f"Apex {industry_key}"
                 ]
 
