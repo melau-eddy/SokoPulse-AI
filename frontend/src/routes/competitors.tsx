@@ -176,7 +176,7 @@ function CompetitorsPage() {
       : undefined;
 
     apiClient
-      .triggerCompetitorScrape(industry, competitorNames)
+      .triggerCompetitorScrape(industry, activeCurrency, competitorNames)
       .then((res) => {
         setIsScraping(false);
         if (res) {

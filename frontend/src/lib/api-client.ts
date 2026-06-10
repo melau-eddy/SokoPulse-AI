@@ -75,10 +75,10 @@ export const apiClient = {
 
   // Competitors
   getCompetitors: async () => safeFetch<any>("/competitors/"),
-  triggerCompetitorScrape: async (industry?: string, competitors?: string[]) =>
+  triggerCompetitorScrape: async (industry?: string, currency?: string, competitors?: string[]) =>
     safeFetch<any>("/competitors/", {
       method: "POST",
-      body: JSON.stringify({ industry, competitors }),
+      body: JSON.stringify({ industry, currency, competitors }),
     }),
 
   // Forecasting
@@ -128,9 +128,9 @@ export const apiClient = {
     }),
 
   // Settings
-  updateIndustry: async (industry: string, competitors?: string[]) =>
+  updateIndustry: async (industry: string, currency: string, competitors?: string[]) =>
     safeFetch<any>("/settings/industry/", {
       method: "POST",
-      body: JSON.stringify({ industry, competitors }),
+      body: JSON.stringify({ industry, currency, competitors }),
     }),
 };

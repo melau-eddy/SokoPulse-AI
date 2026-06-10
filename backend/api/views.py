@@ -283,7 +283,19 @@ class CompetitorsView(APIView):
                 run_intelligence_pipeline()
 
             competitors = request.data.get("competitors")
-            scrape_competitors_task.delay(industry=industry_name, competitors=competitors)
+            currency = request.data.get("currency")
+            
+            # Persist currency setting locally to survive periodic celery beat tasks
+            if currency:
+                try:
+                    import os
+                    file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "currency_setting.txt")
+                    with open(file_path, "w") as f:
+                        f.write(currency.strip().upper())
+                except Exception as e:
+                    print(f"⚠️ Failed to save currency setting to file: {e}")
+
+            scrape_competitors_task.delay(industry=industry_name, currency=currency, competitors=competitors)
             return self.get(request)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -614,13 +626,24 @@ class SettingsIndustryView(APIView):
         try:
             industry_name = request.data.get("industry")
             competitors = request.data.get("competitors")
+            currency = request.data.get("currency")
             if not industry_name:
                 return Response({"error": "Industry name is required"}, status=status.HTTP_400_BAD_REQUEST)
             
+            # Persist currency setting locally to survive periodic celery beat tasks
+            if currency:
+                try:
+                    import os
+                    file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "currency_setting.txt")
+                    with open(file_path, "w") as f:
+                        f.write(currency.strip().upper())
+                except Exception as e:
+                    print(f"⚠️ Failed to save currency setting to file: {e}")
+
             print(f"🔄 Setting industry updated to {industry_name}. Wiping and re-seeding database...")
             seed_for_industry(industry_name)
             run_intelligence_pipeline()
-            scrape_competitors_task.delay(industry=industry_name, competitors=competitors)
+            scrape_competitors_task.delay(industry=industry_name, currency=currency, competitors=competitors)
             
             return Response({
                 "status": "success",

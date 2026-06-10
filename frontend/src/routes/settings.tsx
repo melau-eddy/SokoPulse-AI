@@ -261,7 +261,7 @@ function SettingsPage() {
                     : undefined;
 
                   apiClient
-                    .updateIndustry(industry, competitorNames)
+                    .updateIndustry(industry, currency, competitorNames)
                     .then((res) => {
                       setIsSavingOrg(false);
                       if (res) {

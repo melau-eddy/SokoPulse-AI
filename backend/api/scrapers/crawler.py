@@ -1,3 +1,4 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 from decimal import Decimal
@@ -16,11 +17,21 @@ INDUSTRY_COMPETITORS = {
     "Industrial": ["GlobalLogix", "Nexus Supply Pro", "Apex Trading Co.", "Meridian Imports"]
 }
 
+KENYAN_COMPETITORS = {
+    "Electronics": ["Jumia Kenya", "Kilimall", "Masoko", "Aviye Electronics"],
+    "Pharmaceuticals": ["MyDawa", "GoodLife Pharmacy", "Haltons Pharmacy", "Kasha Kenya"],
+    "Retail": ["Naivas", "Carrefour Kenya", "Quickmart", "Tuskys"],
+    "Healthcare": ["MyDawa", "GoodLife Pharmacy", "Haltons Pharmacy", "Kasha Kenya"],
+    "Construction": ["Bamburi Cement", "Devki Steel", "Mombasa Cement", "National Cement"],
+    "Industrial": ["Davis & Shirtliff", "Car & General", "Krones Kenya", "East African Cables"]
+}
 
-def scrape_competitor_prices(industry=None, competitors=None):
+
+def scrape_competitor_prices(industry=None, competitors=None, currency=None):
     """
     Phase 6: Competitor Intelligence Module.
     Scrapes competitor web catalogs or generates normalized benchmarks for each product.
+    If currency is KES, scrapes competitors within the Kenyan market.
     """
     products = Product.objects.all()
     if not products.exists():
@@ -36,16 +47,40 @@ def scrape_competitor_prices(industry=None, competitors=None):
         normalized = str(industry).strip().title()
         industry_key = normalized
 
+    # Fallback to read currency from file if not passed
+    if not currency:
+        try:
+            # Look in backend directory (root of django project)
+            file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "currency_setting.txt")
+            if os.path.exists(file_path):
+                with open(file_path, "r") as f:
+                    currency = f.read().strip().upper()
+        except Exception as e:
+            print(f"⚠️ Failed to read currency settings file: {e}")
+        if not currency:
+            currency = "USD"
+
     if not competitors:
-        competitors = INDUSTRY_COMPETITORS.get(industry_key)
-        if not competitors:
-            # Dynamically generate 4 competitor names for the custom industry
-            competitors = [
-                f"{industry_key}Direct",
-                f"Bio{industry_key} Solutions",
-                f"{industry_key} Pro",
-                f"Apex {industry_key}"
-            ]
+        if currency == "KES":
+            competitors = KENYAN_COMPETITORS.get(industry_key)
+            if not competitors:
+                # Dynamically generate 4 competitor names for the custom industry in Kenya
+                competitors = [
+                    f"{industry_key} East Africa",
+                    f"Kenya {industry_key}",
+                    f"Nairobi {industry_key} Pro",
+                    f"Soko {industry_key}"
+                ]
+        else:
+            competitors = INDUSTRY_COMPETITORS.get(industry_key)
+            if not competitors:
+                # Dynamically generate 4 competitor names for the custom industry
+                competitors = [
+                    f"{industry_key}Direct",
+                    f"Bio{industry_key} Solutions",
+                    f"{industry_key} Pro",
+                    f"Apex {industry_key}"
+                ]
 
     observations_created = 0
 
@@ -70,7 +105,14 @@ def scrape_competitor_prices(industry=None, competitors=None):
                     stock_tag = soup.select_one(".availability-badge")
                     
                     if price_tag:
-                        scraped_price = float(price_tag.text.replace("$", "").replace(",", ""))
+                        raw_text = price_tag.text.upper()
+                        val_str = raw_text.replace("$", "").replace("KES", "").replace("KSH", "").replace(",", "").strip()
+                        parsed_val = float(val_str)
+                        if "KES" in raw_text or "KSH" in raw_text or currency == "KES":
+                            # Convert KES to USD base price (assuming 130 KES per USD conversion rate)
+                            scraped_price = round(parsed_val / 130.0, 2)
+                        else:
+                            scraped_price = parsed_val
                     if stock_tag and "out" in stock_tag.text.lower():
                         scraped_availability = "Out of Stock"
             except Exception:
@@ -102,4 +144,4 @@ def scrape_competitor_prices(industry=None, competitors=None):
             )
             observations_created += 1
 
-    print(f"🕸️ Competitor Scraping task completed. Saved {observations_created} pricing observations.")
+    print(f"🕸️ Competitor Scraping task completed ({currency}). Saved {observations_created} pricing observations.")
