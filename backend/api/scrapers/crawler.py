@@ -120,27 +120,61 @@ def scrape_competitor_prices(industry=None, competitors=None, currency=None):
 
     observations_created = 0
 
-    for product in products:
+    def scrape_single(product, competitor):
         base_price = float(product.unit_price)
+        url = f"https://mock-scrapers.sokopulse.ai/search?q={product.product_name}&src={competitor}"
+        
+        scraped_price = None
+        scraped_availability = "In Stock"
+        res_ok = False
 
-        for competitor in competitors:
-            # 1. Simulate scraping a web catalog (e.g. mock search requests)
-            url = f"https://mock-scrapers.sokopulse.ai/search?q={product.product_name}&src={competitor}"
-            
-            scraped_price = None
-            scraped_availability = "In Stock"
-            res_ok = False
-
-            if use_mock_scraper:
-                try:
-                    # Mock get request to competitor website index
-                    # This shows the actual structure for BeautifulSoup requests
-                    res = requests.get(url, timeout=2)
-                    if res.status_code == 200:
-                        soup = BeautifulSoup(res.text, "html.parser")
-                        # Mock selectors representing typical e-commerce DOM paths
-                        price_tag = soup.select_one(".price-amount")
-                        stock_tag = soup.select_one(".availability-badge")
+        if use_mock_scraper:
+            user_agents = [
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0",
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            ]
+            headers = {
+                "User-Agent": random.choice(user_agents),
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.5",
+            }
+            try:
+                # Mock get request to competitor website index
+                res = requests.get(url, headers=headers, timeout=2)
+                if res.status_code == 200:
+                    soup = BeautifulSoup(res.text, "html.parser")
+                    
+                    # 1. Try parsing JSON-LD first (standardized schema.org meta)
+                    import json
+                    json_ld_tags = soup.find_all("script", type="application/ld+json")
+                    for tag in json_ld_tags:
+                        try:
+                            data = json.loads(tag.string)
+                            if isinstance(data, dict):
+                                offers = data.get("offers")
+                                if isinstance(offers, dict):
+                                    price_val = offers.get("price")
+                                    if price_val:
+                                        parsed_val = float(str(price_val).replace(",", "").strip())
+                                        if currency == "KES":
+                                            scraped_price = round(parsed_val / 130.0, 2)
+                                        else:
+                                            scraped_price = parsed_val
+                                        
+                                        avail = offers.get("availability", "")
+                                        if "OutOfStock" in avail or "InStoreOnly" in avail:
+                                            scraped_availability = "Out of Stock"
+                                        res_ok = True
+                                        break
+                        except Exception:
+                            pass
+                    
+                    # 2. Fallback to CSS selectors
+                    if not res_ok:
+                        price_tag = soup.select_one(".price-amount, [itemprop='price']")
+                        stock_tag = soup.select_one(".availability-badge, [itemprop='availability']")
                         
                         if price_tag:
                             raw_text = price_tag.text.upper()
@@ -151,43 +185,66 @@ def scrape_competitor_prices(industry=None, competitors=None, currency=None):
                                 scraped_price = round(parsed_val / 130.0, 2)
                             else:
                                 scraped_price = parsed_val
-                        if stock_tag and "out" in stock_tag.text.lower():
-                            scraped_availability = "Out of Stock"
-                        res_ok = True
-                except Exception:
-                    pass
+                            res_ok = True
+                        if stock_tag:
+                            stock_text = stock_tag.text.lower()
+                            if "out" in stock_text or "unavailable" in stock_text:
+                                scraped_availability = "Out of Stock"
+            except Exception:
+                pass
 
-            if not res_ok:
-                # Standalone fallback: generate realistic competitor pricing margins
-                try:
-                    comp_idx = competitors.index(competitor)
-                except ValueError:
-                    comp_idx = 0
-
-                variance = 0.0
-                if comp_idx == 0:
-                    variance = random.uniform(0.02, 0.06) # Premium competitor (+2% to +6%)
-                elif comp_idx == 1:
-                    variance = random.uniform(-0.01, 0.01) # Parity competitor (-1% to +1%)
-                elif comp_idx == 2:
-                    variance = random.uniform(-0.03, 0.01) # Slightly cheaper (-3% to +1%)
-                elif comp_idx == 3:
-                    variance = random.uniform(-0.06, -0.02) # Discounter (-6% to -2%)
-
-                scraped_price = round(base_price * (1 + variance), 2)
-                scraped_availability = "In Stock" if random.random() > 0.15 else "Out of Stock"
-
-            # Create or update observation in database, catch IntegrityErrors from potential dynamic seeding race conditions
+        if not res_ok:
+            # Standalone fallback: generate realistic competitor pricing margins
             try:
-                CompetitorData.objects.create(
-                    product=product,
-                    competitor_name=competitor,
-                    price=Decimal(str(scraped_price)),
-                    availability=scraped_availability
-                )
-                observations_created += 1
+                comp_idx = competitors.index(competitor)
+            except ValueError:
+                comp_idx = 0
+
+            variance = 0.0
+            if comp_idx == 0:
+                variance = random.uniform(0.02, 0.06) # Premium competitor (+2% to +6%)
+            elif comp_idx == 1:
+                variance = random.uniform(-0.01, 0.01) # Parity competitor (-1% to +1%)
+            elif comp_idx == 2:
+                variance = random.uniform(-0.03, 0.01) # Slightly cheaper (-3% to +1%)
+            elif comp_idx == 3:
+                variance = random.uniform(-0.06, -0.02) # Discounter (-6% to -2%)
+
+            scraped_price = round(base_price * (1 + variance), 2)
+            scraped_availability = "In Stock" if random.random() > 0.15 else "Out of Stock"
+
+        return product, competitor, scraped_price, scraped_availability
+
+    # Dispatch tasks concurrently using ThreadPoolExecutor
+    from concurrent.futures import ThreadPoolExecutor
+    tasks_list = []
+    for product in products:
+        for competitor in competitors:
+            tasks_list.append((product, competitor))
+
+    observations = []
+    max_workers = min(10, len(tasks_list) or 1)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(scrape_single, p, c) for p, c in tasks_list]
+        for future in futures:
+            try:
+                res = future.result()
+                observations.append(res)
             except Exception as e:
-                print(f"⚠️ Failed to save competitor observation for {product.product_name}: {e}")
+                print(f"⚠️ Worker thread failed: {e}")
+
+    # Write observations to DB
+    for product, competitor, scraped_price, scraped_availability in observations:
+        try:
+            CompetitorData.objects.create(
+                product=product,
+                competitor_name=competitor,
+                price=Decimal(str(scraped_price)),
+                availability=scraped_availability
+            )
+            observations_created += 1
+        except Exception as e:
+            print(f"⚠️ Failed to save competitor observation for {product.product_name}: {e}")
 
     print(f"🕸️ Competitor Scraping task completed ({currency}). Saved {observations_created} pricing observations.")
 
