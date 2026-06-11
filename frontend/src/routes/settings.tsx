@@ -123,6 +123,11 @@ function SettingsPage() {
     return "30";
   });
 
+  // Database Tap/Sync
+  const [dbType, setDbType] = useState("sqlite");
+  const [dbFilepath, setDbFilepath] = useState("default");
+  const [isSyncingDb, setIsSyncingDb] = useState(false);
+
   return (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto">
       <PageHeader
@@ -481,6 +486,75 @@ function SettingsPage() {
               ))}
             </div>
           </SectionCard>
+
+          <div className="mt-6">
+            <SectionCard
+              title="Business Database Tap Connector"
+              description="Connect SokoPulse directly to your business database to load real-time stock levels, pricing, and sales data into our machine learning demand forecasting engine."
+            >
+              <div className="grid gap-4">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="db-type">Database Type</Label>
+                  <Select value={dbType} onValueChange={(val) => setDbType(val)}>
+                    <SelectTrigger id="db-type" className="w-full">
+                      <SelectValue placeholder="Select Database Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sqlite">SQLite Database File</SelectItem>
+                      <SelectItem value="postgresql" disabled>PostgreSQL (Enterprise Connection)</SelectItem>
+                      <SelectItem value="mysql" disabled>MySQL (Enterprise Connection)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-1.5">
+                  <Label htmlFor="db-filepath">Database Filepath / Host</Label>
+                  <Input
+                    id="db-filepath"
+                    value={dbFilepath}
+                    onChange={(e) => setDbFilepath(e.target.value)}
+                    placeholder="Enter full path or default"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Leave as <code className="bg-muted px-1 py-0.5 rounded">default</code> to generate and connect to a mock business database containing sample inventory and sales history.
+                  </p>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button
+                    disabled={isSyncingDb}
+                    onClick={() => {
+                      setIsSyncingDb(true);
+                      apiClient
+                        .syncDatabase(dbType, dbFilepath)
+                        .then((res) => {
+                          setIsSyncingDb(false);
+                          if (res && res.status === "success") {
+                            toast.success(res.message);
+                            window.dispatchEvent(new Event("industry-updated"));
+                          } else {
+                            toast.error(res?.message || "Sync request failed.");
+                          }
+                        })
+                        .catch((err) => {
+                          setIsSyncingDb(false);
+                          toast.error("Database connection or sync failed.");
+                        });
+                    }}
+                  >
+                    {isSyncingDb ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Tapping Database...
+                      </>
+                    ) : (
+                      "Connect & Sync Telemetry"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </SectionCard>
+          </div>
         </TabsContent>
 
         <TabsContent value="security">

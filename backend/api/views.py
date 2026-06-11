@@ -415,6 +415,7 @@ class ForecastingView(APIView):
         # Predict future weeks W6, W7, W8
         model_loaded = False
         model_path = os.path.join(os.path.dirname(__file__), "ml", "checkpoints", "demand_model.joblib")
+        model = None
         if os.path.exists(model_path):
             try:
                 model = joblib.load(model_path)
@@ -422,19 +423,32 @@ class ForecastingView(APIView):
             except Exception as e:
                 print(f"Error loading ML model: {e}")
                 
-        last_actual = db_weeks[-1]
+        # Generate 21-day predictions (3 weeks) for each product
+        future_weekly_predictions = [0.0, 0.0, 0.0]
+        products = Product.objects.all()
+        
+        from api.ml.forecaster import forecast_product_sales
+        for product in products:
+            preds = forecast_product_sales(product, model, days=21)
+            future_weekly_predictions[0] += sum(preds[:7])
+            future_weekly_predictions[1] += sum(preds[7:14])
+            future_weekly_predictions[2] += sum(preds[14:21])
+            
         for i in range(3):
             week_num = i + 6
-            # Base growth: 5% weekly growth
-            growth_factor = 1.05 ** (i + 1)
-            forecast = int(last_actual * growth_factor * random.uniform(0.98, 1.02))
-            
+            forecast_qty = int(future_weekly_predictions[i])
+            if forecast_qty == 0:
+                # Fallback if no products/sales
+                last_actual = db_weeks[-1]
+                growth_factor = 1.05 ** (i + 1)
+                forecast_qty = int(last_actual * growth_factor * random.uniform(0.98, 1.02))
+                
             demand_forecast.append({
                 "week": f"W{week_num}",
                 "actual": 0,
-                "forecast": forecast,
-                "upper": int(forecast * 1.1),
-                "lower": int(forecast * 0.9),
+                "forecast": forecast_qty,
+                "upper": int(forecast_qty * 1.1),
+                "lower": int(forecast_qty * 0.9),
             })
             
         # 2. Monthly sales trend (last 9 months)
@@ -735,3 +749,35 @@ class SettingsIndustryView(APIView):
             })
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class DatabaseSyncView(APIView):
+    def post(self, request):
+        import os
+        db_type = request.data.get("db_type", "sqlite")
+        filepath = request.data.get("filepath", "")
+
+        from api.utils.database_tap import create_external_db_if_not_exists, sync_from_sqlite
+        
+        try:
+            target_path = filepath
+            if not target_path or target_path == "default":
+                target_path = create_external_db_if_not_exists()
+
+            if not os.path.exists(target_path):
+                return Response({
+                    "status": "error",
+                    "message": f"Database file not found at {target_path}"
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            products_count, sales_count = sync_from_sqlite(target_path)
+            
+            return Response({
+                "status": "success",
+                "message": f"Successfully tapped and synced external database. Imported {products_count} products and {sales_count} sales transactions. ML pipeline forecasting completed."
+            })
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": f"Failed to sync database: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

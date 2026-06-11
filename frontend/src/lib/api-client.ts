@@ -156,4 +156,11 @@ export const apiClient = {
       method: "POST",
       body: JSON.stringify({ industry, currency, competitors }),
     }),
+
+  // Database Sync/Tap Integration
+  syncDatabase: async (dbType: string, filepath?: string) =>
+    safeFetch<any>("/sync/database/", {
+      method: "POST",
+      body: JSON.stringify({ db_type: dbType, filepath }),
+    }),
 };

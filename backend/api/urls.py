@@ -20,6 +20,7 @@ from .views import (
     PricingView,
     ProcurementView,
     SettingsIndustryView,
+    DatabaseSyncView,
 )
 
 router = DefaultRouter()
@@ -42,5 +43,6 @@ urlpatterns = [
     path("procurement/", ProcurementView.as_view(), name="procurement"),
     path("competitors/", CompetitorsView.as_view(), name="competitors"),
     path("settings/industry/", SettingsIndustryView.as_view(), name="settings-industry"),
+    path("sync/database/", DatabaseSyncView.as_view(), name="database-sync"),
     path("", include(router.urls)),
 ]
