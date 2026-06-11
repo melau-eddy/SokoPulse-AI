@@ -80,27 +80,43 @@ def scrape_competitor_prices(industry=None, competitors=None, currency=None):
             currency = "USD"
 
     if not competitors:
-        if currency == "KES":
-            competitors = KENYAN_COMPETITORS.get(industry_key)
-            if not competitors:
-                # Dynamically generate 4 competitor names for the custom industry in Kenya
-                competitors = [
-                    f"{industry_key} East Africa",
-                    f"Kenya {industry_key}",
-                    f"Nairobi {industry_key} Pro",
-                    f"Soko {industry_key}"
-                ]
-        else:
-            # Default to US market competitors for USD
-            competitors = US_COMPETITORS.get(industry_key)
-            if not competitors:
-                # Dynamically generate 4 competitor names for the custom industry in US
-                competitors = [
-                    f"{industry_key} US",
-                    f"American {industry_key}",
-                    f"{industry_key} Pro USA",
-                    f"Apex {industry_key}"
-                ]
+        try:
+            from api.utils.dynamic_seeder import get_crawler_competitors
+            competitors = get_crawler_competitors(industry_key, currency)
+        except Exception as e:
+            print(f"⚠️ Failed to get crawler competitors dynamically: {e}")
+
+        if not competitors:
+            if currency == "KES":
+                competitors = KENYAN_COMPETITORS.get(industry_key)
+                if not competitors:
+                    # Dynamically generate 4 competitor names for the custom industry in Kenya
+                    competitors = [
+                        f"{industry_key} East Africa",
+                        f"Kenya {industry_key}",
+                        f"Nairobi {industry_key} Pro",
+                        f"Soko {industry_key}"
+                    ]
+            else:
+                # Default to US market competitors for USD
+                competitors = US_COMPETITORS.get(industry_key)
+                if not competitors:
+                    # Dynamically generate 4 competitor names for the custom industry in US
+                    competitors = [
+                        f"{industry_key} US",
+                        f"American {industry_key}",
+                        f"{industry_key} Pro USA",
+                        f"Apex {industry_key}"
+                    ]
+
+    # Check if mock scraper domain is reachable to avoid consecutive 2s connection timeouts
+    use_mock_scraper = False
+    if products.exists():
+        try:
+            requests.get("https://mock-scrapers.sokopulse.ai", timeout=0.3)
+            use_mock_scraper = True
+        except Exception:
+            use_mock_scraper = False
 
     observations_created = 0
 
@@ -113,29 +129,35 @@ def scrape_competitor_prices(industry=None, competitors=None, currency=None):
             
             scraped_price = None
             scraped_availability = "In Stock"
+            res_ok = False
 
-            try:
-                # Mock get request to competitor website index
-                # This shows the actual structure for BeautifulSoup requests
-                res = requests.get(url, timeout=2)
-                if res.status_code == 200:
-                    soup = BeautifulSoup(res.text, "html.parser")
-                    # Mock selectors representing typical e-commerce DOM paths
-                    price_tag = soup.select_one(".price-amount")
-                    stock_tag = soup.select_one(".availability-badge")
-                    
-                    if price_tag:
-                        raw_text = price_tag.text.upper()
-                        val_str = raw_text.replace("$", "").replace("KES", "").replace("KSH", "").replace(",", "").strip()
-                        parsed_val = float(val_str)
-                        if "KES" in raw_text or "KSH" in raw_text or currency == "KES":
-                            # Convert KES to USD base price (assuming 130 KES per USD conversion rate)
-                            scraped_price = round(parsed_val / 130.0, 2)
-                        else:
-                            scraped_price = parsed_val
-                    if stock_tag and "out" in stock_tag.text.lower():
-                        scraped_availability = "Out of Stock"
-            except Exception:
+            if use_mock_scraper:
+                try:
+                    # Mock get request to competitor website index
+                    # This shows the actual structure for BeautifulSoup requests
+                    res = requests.get(url, timeout=2)
+                    if res.status_code == 200:
+                        soup = BeautifulSoup(res.text, "html.parser")
+                        # Mock selectors representing typical e-commerce DOM paths
+                        price_tag = soup.select_one(".price-amount")
+                        stock_tag = soup.select_one(".availability-badge")
+                        
+                        if price_tag:
+                            raw_text = price_tag.text.upper()
+                            val_str = raw_text.replace("$", "").replace("KES", "").replace("KSH", "").replace(",", "").strip()
+                            parsed_val = float(val_str)
+                            if "KES" in raw_text or "KSH" in raw_text or currency == "KES":
+                                # Convert KES to USD base price (assuming 130 KES per USD conversion rate)
+                                scraped_price = round(parsed_val / 130.0, 2)
+                            else:
+                                scraped_price = parsed_val
+                        if stock_tag and "out" in stock_tag.text.lower():
+                            scraped_availability = "Out of Stock"
+                        res_ok = True
+                except Exception:
+                    pass
+
+            if not res_ok:
                 # Standalone fallback: generate realistic competitor pricing margins
                 try:
                     comp_idx = competitors.index(competitor)
@@ -155,14 +177,17 @@ def scrape_competitor_prices(industry=None, competitors=None, currency=None):
                 scraped_price = round(base_price * (1 + variance), 2)
                 scraped_availability = "In Stock" if random.random() > 0.15 else "Out of Stock"
 
-            # Create or update observation in database
-            CompetitorData.objects.create(
-                product=product,
-                competitor_name=competitor,
-                price=Decimal(str(scraped_price)),
-                availability=scraped_availability
-            )
-            observations_created += 1
+            # Create or update observation in database, catch IntegrityErrors from potential dynamic seeding race conditions
+            try:
+                CompetitorData.objects.create(
+                    product=product,
+                    competitor_name=competitor,
+                    price=Decimal(str(scraped_price)),
+                    availability=scraped_availability
+                )
+                observations_created += 1
+            except Exception as e:
+                print(f"⚠️ Failed to save competitor observation for {product.product_name}: {e}")
 
     print(f"🕸️ Competitor Scraping task completed ({currency}). Saved {observations_created} pricing observations.")
 

@@ -75,11 +75,34 @@ export const apiClient = {
 
   // Competitors
   getCompetitors: async () => safeFetch<any>("/competitors/"),
-  triggerCompetitorScrape: async (industry?: string, currency?: string, competitors?: string[]) =>
-    safeFetch<any>("/competitors/", {
+  triggerCompetitorScrape: async (
+    industry?: string,
+    currencyOrCompetitors?: string | string[],
+    competitors?: string[]
+  ) => {
+    let actualCurrency: string | undefined = undefined;
+    let actualCompetitors: string[] | undefined = undefined;
+
+    if (Array.isArray(currencyOrCompetitors)) {
+      actualCompetitors = currencyOrCompetitors;
+    } else if (typeof currencyOrCompetitors === "string") {
+      actualCurrency = currencyOrCompetitors;
+      actualCompetitors = competitors;
+    }
+
+    if (!actualCurrency && typeof window !== "undefined") {
+      actualCurrency = localStorage.getItem("sokopulse_currency") || "USD";
+    }
+
+    return safeFetch<any>("/competitors/", {
       method: "POST",
-      body: JSON.stringify({ industry, currency, competitors }),
-    }),
+      body: JSON.stringify({
+        industry,
+        currency: actualCurrency,
+        competitors: actualCompetitors,
+      }),
+    });
+  },
 
   // Forecasting
   getForecasting: async () => safeFetch<any>("/forecasting/"),
