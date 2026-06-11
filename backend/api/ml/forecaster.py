@@ -201,7 +201,12 @@ def forecast_product_sales(product, model, days=30):
                 "month": month,
             }])
             
-            pred = max(0.0, float(model.predict(X_input)[0]))
+            try:
+                pred = max(0.0, float(model.predict(X_input)[0]))
+            except Exception as e:
+                print(f"⚠️ ML prediction failed for {product.product_name}: {e}")
+                # Fallback to rolling mean of last 3 days
+                pred = max(0.0, float(np.mean(temp_history[-3:])))
             predictions.append(pred)
             
             # Append prediction to temp_history for next step lags

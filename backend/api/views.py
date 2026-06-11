@@ -771,6 +771,15 @@ class DatabaseSyncView(APIView):
                 }, status=status.HTTP_404_NOT_FOUND)
 
             products_count, sales_count = sync_from_sqlite(target_path)
+
+            # Persist industry setting as "Industrial" locally to survive celery beats/tasks
+            try:
+                file_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                file_path = os.path.join(file_dir, "industry_setting.txt")
+                with open(file_path, "w") as f:
+                    f.write("Industrial")
+            except Exception as e:
+                print(f"⚠️ Failed to save tapped industry setting to file: {e}")
             
             return Response({
                 "status": "success",

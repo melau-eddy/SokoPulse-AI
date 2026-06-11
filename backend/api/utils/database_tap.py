@@ -144,28 +144,34 @@ def sync_from_sqlite(db_filepath):
             )
             suppliers_created[supplier_name] = supplier
 
+        # Robust fallbacks for numeric values
+        stock_val = int(stock) if stock is not None else 0
+        reorder_val = int(reorder) if reorder is not None else 0
+        safety_val = int(safety) if safety is not None else 0
+        price_val = Decimal(str(price)) if price is not None else Decimal("0.00")
+
         status = "healthy"
-        if stock == 0 or stock <= reorder * 0.2:
+        if stock_val == 0 or stock_val <= reorder_val * 0.2:
             status = "critical"
-        elif stock <= reorder:
+        elif stock_val <= reorder_val:
             status = "low"
-        elif stock >= reorder * 1.5:
+        elif stock_val >= reorder_val * 1.5:
             status = "overstocked"
 
         product = Product.objects.create(
             sku=sku,
             product_name=name,
-            category=cat,
-            unit_price=Decimal(str(price)),
-            reorder_point=reorder,
-            safety_stock=safety,
+            category=cat if cat else "Uncategorized",
+            unit_price=price_val,
+            reorder_point=reorder_val,
+            safety_stock=safety_val,
             status=status,
             supplier=supplier_name
         )
 
         Inventory.objects.create(
             product=product,
-            quantity_available=stock,
+            quantity_available=stock_val,
             warehouse_location="Warehouse Alpha"
         )
 
@@ -199,11 +205,14 @@ def sync_from_sqlite(db_filepath):
                 except Exception:
                     t_date = timezone.now()
 
+            qty_val = int(qty) if qty is not None else 1
+            price_val = Decimal(str(price)) if price is not None else product.unit_price
+
             sales_to_create.append(
                 Sales(
                     product=product,
-                    quantity_sold=qty,
-                    selling_price=Decimal(str(price)),
+                    quantity_sold=qty_val,
+                    selling_price=price_val,
                     transaction_date=t_date
                 )
             )

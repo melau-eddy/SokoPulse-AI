@@ -50,14 +50,19 @@ def scrape_competitor_prices(industry=None, competitors=None, currency=None):
 
     # Filter products to strictly belong to the indicated industry template or custom template
     from api.utils.dynamic_seeder import INDUSTRY_TEMPLATES, generate_custom_products
-    products = Product.objects.all()
+    all_products = Product.objects.all()
+    products = all_products
     if industry_key in INDUSTRY_TEMPLATES:
         template_names = {item["name"] for item in INDUSTRY_TEMPLATES[industry_key]}
-        products = products.filter(product_name__in=template_names)
+        products = all_products.filter(product_name__in=template_names)
     else:
         custom_items = generate_custom_products(industry_key)
         custom_names = {item["name"] for item in custom_items}
-        products = products.filter(product_name__in=custom_names)
+        products = all_products.filter(product_name__in=custom_names)
+
+    # Fallback: if filtering yields no products but products do exist in the DB (e.g., from tapped databases), scrape all
+    if not products.exists() and all_products.exists():
+        products = all_products
 
     if not products.exists():
         print(f"ℹ️ No products registered for industry '{industry_key}' to compile competitor benchmarks.")
