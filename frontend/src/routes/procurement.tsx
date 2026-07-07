@@ -51,43 +51,11 @@ interface StatefulProcurement extends ProcurementItem {
   trackingStatus?: string;
 }
 
-const mockActivePOs: StatefulProcurement[] = [
-  {
-    id: "active1",
-    product: "Titan Grade Castings",
-    qty: 120,
-    supplier: "Iron Bridge Co.",
-    leadTime: 9,
-    cost: 10680,
-    urgency: "medium",
-    reason: "Scheduled restocking cycle",
-    status: "approved",
-    poNumber: "PO-22180",
-    etaDate: "2026-06-18",
-    trackingStatus: "In Transit",
-  },
-  {
-    id: "active2",
-    product: "Lithium Cell Mod-8",
-    qty: 300,
-    supplier: "VoltCore Industries",
-    leadTime: 14,
-    cost: 23400,
-    urgency: "critical",
-    reason: "Delayed previous delivery fallback",
-    status: "approved",
-    poNumber: "PO-22183",
-    etaDate: "2026-06-24",
-    trackingStatus: "Delayed (Customs Hold)",
-  },
-];
-
 function ProcurementPage() {
   const [recommendations, setRecommendations] = useState<StatefulProcurement[]>(
     () => seedItems.map((item) => ({ ...item, status: "pending" })),
   );
-  const [activePOs, setActivePOs] =
-    useState<StatefulProcurement[]>(mockActivePOs);
+  const [activePOs, setActivePOs] = useState<StatefulProcurement[]>([]);
   const [activeTab, setActiveTab] = useState<"pending" | "active">("pending");
   const [adjustItem, setAdjustItem] = useState<StatefulProcurement | null>(
     null,
