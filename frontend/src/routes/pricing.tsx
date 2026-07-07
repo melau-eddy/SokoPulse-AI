@@ -111,11 +111,11 @@ function PricingPage() {
           (sum, item) => sum + (item.overrideMargin ?? item.margin),
           0,
         ) / activeItemsForMargin.length
-      : 32;
+      : 0;
 
   // Elasticity Simulation calculations
   const multiplierVal = simulationMultiplier[0] / 100; // e.g. 1.0
-  const baseRevenueLift = 184000;
+  const baseRevenueLift = items.length > 0 ? 184000 : 0;
   const simulatedRevenueLift =
     baseRevenueLift * multiplierVal * (1 - (multiplierVal - 1) * 0.4); // simulates price elasticity decay
 
@@ -230,9 +230,9 @@ function PricingPage() {
           <KpiCard
             label="Avg. Target Margin"
             value={`${avgMargin.toFixed(1)}%`}
-            delta="+1.2%"
-            trend="up"
-            accent="success"
+            delta={items.length > 0 ? "+1.2%" : undefined}
+            trend={items.length > 0 ? "up" : undefined}
+            accent={items.length > 0 ? "success" : undefined}
           />
           <KpiCard
             label="Simulated Revenue Lift"

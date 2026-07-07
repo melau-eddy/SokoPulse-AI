@@ -59,13 +59,13 @@ function SuppliersPage() {
       ? Math.round(
           suppliers.reduce((sum, s) => sum + s.reliability, 0) / activeCount,
         )
-      : 88;
+      : 0;
   const avgLeadTime =
     activeCount > 0
       ? (
           suppliers.reduce((sum, s) => sum + s.leadTime, 0) / activeCount
         ).toFixed(1)
-      : "8.2";
+      : "0";
   const delayedCount = suppliers.filter((s) => s.status === "delayed").length;
 
   return (
@@ -84,8 +84,8 @@ function SuppliersPage() {
         <KpiCard
           label="Avg. Reliability"
           value={`${avgReliability}%`}
-          delta="+2%"
-          trend="up"
+          delta={activeCount > 0 ? "+2%" : undefined}
+          trend={activeCount > 0 ? "up" : undefined}
         />
         <KpiCard label="Avg. Lead Time" value={`${avgLeadTime} days`} />
         <KpiCard

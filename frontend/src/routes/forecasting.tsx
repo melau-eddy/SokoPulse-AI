@@ -156,9 +156,9 @@ function ForecastingPage() {
           <KpiCard
             label="Forecast Accuracy (90d)"
             value={metrics.accuracy}
-            delta="+1.4%"
-            trend="up"
-            accent="primary"
+            delta={metrics.accuracy !== "0%" ? "+1.4%" : undefined}
+            trend={metrics.accuracy !== "0%" ? "up" : undefined}
+            accent={metrics.accuracy !== "0%" ? "primary" : undefined}
           />
           <KpiCard
             label="MAPE"
