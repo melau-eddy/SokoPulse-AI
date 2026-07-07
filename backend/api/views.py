@@ -325,29 +325,7 @@ class CompetitorsView(APIView):
             industry = request.data.get("industry")
             industry_name = industry or "Industrial"
             
-            # Check if database has products, and if they match the requested industry
-            first_product = Product.objects.first()
-            reseed_needed = True
-
-            if first_product:
-                from api.utils.dynamic_seeder import INDUSTRY_TEMPLATES, generate_custom_products
-                normalized = industry_name.strip().title()
-                template = INDUSTRY_TEMPLATES.get(normalized)
-                if template:
-                    template_names = [item["name"] for item in template]
-                    if first_product.product_name in template_names:
-                        reseed_needed = False
-                else:
-                    custom_items = generate_custom_products(normalized)
-                    custom_names = [item["name"] for item in custom_items]
-                    if first_product.product_name in custom_names:
-                        reseed_needed = False
-
-            if reseed_needed:
-                print(f"🔄 Detected industry change to {industry_name}. Re-seeding database dynamically...")
-                seed_for_industry(industry_name)
-                # Re-run the ML intelligence/recommendations pipeline for the new items
-                run_intelligence_pipeline()
+            # Mock data auto-seeding has been disabled for full system testing.
 
             competitors = request.data.get("competitors")
             currency = request.data.get("currency")
@@ -760,8 +738,9 @@ class SettingsIndustryView(APIView):
                 except Exception as e:
                     print(f"⚠️ Failed to save country setting to file: {e}")
 
-            print(f"🔄 Setting industry updated to {industry_name}. Wiping and re-seeding database...")
-            seed_for_industry(industry_name)
+            print(f"🔄 Setting industry updated to {industry_name}.")
+            # Mock data auto-seeding has been disabled for full system testing.
+            # seed_for_industry(industry_name)
             run_intelligence_pipeline()
             scrape_competitors_task.delay(industry=industry_name, currency=currency, competitors=competitors, country=country)
             
