@@ -45,7 +45,7 @@ const reportsData: ReportMeta[] = [
     id: "inv",
     title: "Inventory Report",
     desc: "Full stock snapshot, status breakdown, and aging analysis.",
-    rows: "1,240 SKUs",
+    rows: "0 SKUs",
     columns: [
       "SKU",
       "Product Name",
@@ -54,87 +54,21 @@ const reportsData: ReportMeta[] = [
       "Value",
       "Status",
     ],
-    data: [
-      {
-        SKU: "APX-901-ZH",
-        name: "Apex-9 Optical Sensor",
-        category: "Electronics",
-        stock: 14,
-        value: 16786,
-        status: "Critical",
-      },
-      {
-        SKU: "TTN-441-B",
-        name: "Titan Grade Castings",
-        category: "Industrial",
-        stock: 142,
-        value: 12638,
-        status: "Low",
-      },
-      {
-        SKU: "NRC-990-X",
-        name: "Neural Engine Core v2",
-        category: "Electronics",
-        stock: 890,
-        value: 2180500,
-        status: "Healthy",
-      },
-      {
-        SKU: "CRC-220-A",
-        name: "Ceramic Capacitor 220uF",
-        category: "Electronics",
-        stock: 85000,
-        value: 35700,
-        status: "Overstocked",
-      },
-    ],
+    data: [],
   },
   {
     id: "sal",
     title: "Sales Report",
     desc: "Revenue by product, channel, and category for the selected window.",
-    rows: "30 days",
+    rows: "0 days",
     columns: ["Date", "Product", "Qty Sold", "Avg Price", "Revenue", "Channel"],
-    data: [
-      {
-        Date: "2026-06-09",
-        product: "Neural Engine Core v2",
-        qty: 12,
-        price: 2450.00,
-        revenue: 29400.00,
-        channel: "Direct",
-      },
-      {
-        Date: "2026-06-09",
-        product: "Apex-9 Optical Sensor",
-        qty: 42,
-        price: 1199.00,
-        revenue: 50358.00,
-        channel: "Distributor",
-      },
-      {
-        Date: "2026-06-08",
-        product: "Smart Hub Z-Wave",
-        qty: 18,
-        price: 149.00,
-        revenue: 2682.00,
-        channel: "E-Commerce",
-      },
-      {
-        Date: "2026-06-08",
-        product: "Solar-X Panel 400W",
-        qty: 5,
-        price: 489.00,
-        revenue: 2445.00,
-        channel: "Direct",
-      },
-    ],
+    data: [],
   },
   {
     id: "prc",
     title: "Pricing Report",
     desc: "Recommendation history, accept/override rates, and margin impact.",
-    rows: "54 decisions",
+    rows: "0 decisions",
     columns: [
       "Product",
       "Base Price",
@@ -143,46 +77,13 @@ const reportsData: ReportMeta[] = [
       "Margin Lift",
       "Status",
     ],
-    data: [
-      {
-        product: "Apex-9 Optical Sensor",
-        base: 1199.00,
-        new: 1259.00,
-        competitor: 1248.00,
-        lift: "+4.8%",
-        status: "Approved",
-      },
-      {
-        product: "Smart Hub Z-Wave",
-        base: 149.00,
-        new: 159.00,
-        competitor: 162.00,
-        lift: "+6.4%",
-        status: "Approved",
-      },
-      {
-        product: "Solar-X Panel 400W",
-        base: 489.00,
-        new: 469.00,
-        competitor: 462.00,
-        lift: "-2.1%",
-        status: "Overridden",
-      },
-      {
-        product: "Neural Engine Core v2",
-        base: 2450.00,
-        new: 2520.00,
-        competitor: 2495.00,
-        lift: "+3.2%",
-        status: "Approved",
-      },
-    ],
+    data: [],
   },
   {
     id: "fc",
     title: "Forecast Report",
     desc: "Predicted demand, accuracy metrics, and confidence intervals.",
-    rows: "12 weeks",
+    rows: "0 weeks",
     columns: [
       "Week",
       "Category",
@@ -191,46 +92,13 @@ const reportsData: ReportMeta[] = [
       "MAPE Error",
       "Confidence Interval",
     ],
-    data: [
-      {
-        Week: "W1 (Current)",
-        category: "Electronics",
-        historical: 420,
-        predicted: 410,
-        mape: "5.2%",
-        confidence: "±8.1%",
-      },
-      {
-        Week: "W2",
-        category: "Electronics",
-        historical: 480,
-        predicted: 475,
-        mape: "5.4%",
-        confidence: "±8.2%",
-      },
-      {
-        Week: "W3",
-        category: "Electronics",
-        historical: 510,
-        predicted: 520,
-        mape: "5.8%",
-        confidence: "±8.4%",
-      },
-      {
-        Week: "W4",
-        category: "Electronics",
-        historical: 545,
-        predicted: 560,
-        mape: "6.1%",
-        confidence: "±8.5%",
-      },
-    ],
+    data: [],
   },
   {
     id: "prc2",
     title: "Procurement Report",
     desc: "Purchase orders, supplier performance, lead times, and spend.",
-    rows: "38 POs",
+    rows: "0 POs",
     columns: [
       "PO Number",
       "Product",
@@ -239,38 +107,13 @@ const reportsData: ReportMeta[] = [
       "Cost",
       "Tracking Status",
     ],
-    data: [
-      {
-        po: "PO-22180",
-        product: "Titan Grade Castings",
-        supplier: "Iron Bridge Co.",
-        qty: 120,
-        cost: 10680,
-        status: "In Transit",
-      },
-      {
-        po: "PO-22183",
-        product: "Lithium Cell Mod-8",
-        supplier: "VoltCore Industries",
-        qty: 300,
-        cost: 23400,
-        status: "Delayed (Customs)",
-      },
-      {
-        po: "PO-22191",
-        product: "Apex-9 Optical Sensor",
-        supplier: "Nexus Supply",
-        qty: 240,
-        cost: 287760,
-        status: "Awaiting Conf.",
-      },
-    ],
+    data: [],
   },
   {
     id: "alt",
     title: "Alerts Report",
     desc: "Incident log with severity, resolution time, and category.",
-    rows: "59 events",
+    rows: "0 events",
     columns: [
       "Timestamp",
       "Alert Category",
@@ -278,29 +121,7 @@ const reportsData: ReportMeta[] = [
       "Incident Title",
       "Resolution Time",
     ],
-    data: [
-      {
-        time: "2026-06-09 23:49",
-        category: "Inventory",
-        severity: "Critical",
-        title: "Apex-9 Predicted stock-out in 4 days",
-        resolution: "Awaiting Order",
-      },
-      {
-        time: "2026-06-09 23:01",
-        category: "Pricing",
-        severity: "High",
-        title: "Meridian Imports dropped Solar-X price by 6.2%",
-        resolution: "45 mins",
-      },
-      {
-        time: "2026-06-09 21:12",
-        category: "Supplier",
-        severity: "High",
-        title: "VoltCore Order PO-22183 delayed",
-        resolution: "Unresolved",
-      },
-    ],
+    data: [],
   },
 ];
 
@@ -482,16 +303,14 @@ function ReportsPage() {
         />
         <KpiCard
           label="Compiled this month"
-          value="142"
-          delta="+18"
-          trend="up"
+          value="0"
         />
         <KpiCard
           label="Scheduled exports"
-          value="9"
+          value="0"
           hint="Daily/weekly cron tasks"
         />
-        <KpiCard label="Avg. Generation speed" value="0.8s" />
+        <KpiCard label="Avg. Generation speed" value="0.0s" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -615,25 +434,8 @@ function ReportsPage() {
         title="Scheduled Platform Reports"
         description="Emailed automatically to stakeholders"
       >
-        <div className="space-y-2 text-sm">
-          <Row
-            title="Weekly Inventory Summary"
-            cadence="Every Monday · 08:00 UTC"
-            format="Excel/CSV"
-            email="operations@sokopulse.ai"
-          />
-          <Row
-            title="Daily Critical Alerts Log"
-            cadence="Every day · 07:00 UTC"
-            format="PDF"
-            email="management-team@sokopulse.ai"
-          />
-          <Row
-            title="Monthly Pricing Decisions & Elasticity"
-            cadence="1st of each month · 09:00 UTC"
-            format="PDF/Excel"
-            email="finance@sokopulse.ai"
-          />
+        <div className="space-y-2 text-sm text-muted-foreground py-4 text-center">
+          No scheduled exports configured.
         </div>
       </SectionCard>
     </div>
