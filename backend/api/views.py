@@ -739,8 +739,11 @@ class SettingsIndustryView(APIView):
                     print(f"⚠️ Failed to save country setting to file: {e}")
 
             print(f"🔄 Setting industry updated to {industry_name}.")
-            # Mock data auto-seeding has been disabled for full system testing.
-            # seed_for_industry(industry_name)
+            
+            if request.data.get("seed") is True:
+                print(f"🌱 Seeding database for new registration: {industry_name}...")
+                seed_for_industry(industry_name)
+                
             run_intelligence_pipeline()
             scrape_competitors_task.delay(industry=industry_name, currency=currency, competitors=competitors, country=country)
             

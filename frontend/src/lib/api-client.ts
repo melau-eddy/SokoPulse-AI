@@ -152,10 +152,10 @@ export const apiClient = {
     }),
 
   // Settings
-  updateIndustry: async (industry: string, currency: string, competitors?: string[], country?: string) =>
+  updateIndustry: async (industry: string, currency: string, competitors?: string[], country?: string, seed?: boolean) =>
     safeFetch<any>("/settings/industry/", {
       method: "POST",
-      body: JSON.stringify({ industry, currency, competitors, country }),
+      body: JSON.stringify({ industry, currency, competitors, country, seed }),
     }),
 
   // Database Sync/Tap Integration

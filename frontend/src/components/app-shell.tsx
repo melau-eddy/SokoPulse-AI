@@ -68,6 +68,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [industry, setIndustry] = useState("Retail");
+  const [country, setCountry] = useState("United States");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Global Search states
@@ -198,11 +200,28 @@ export function AppShell({ children }: { children: ReactNode }) {
       });
     } else {
       apiClient.register({ username, email, password }).then((res) => {
-        setIsSubmitting(false);
         if (res) {
-          toast.success("Account registered! Please log in.");
-          setIsLogin(true);
+          // Auto login to set industry and seed
+          apiClient.login({ username, password }).then((loginRes) => {
+            if (loginRes && loginRes.access) {
+              localStorage.setItem("sokopulse_token", loginRes.access);
+              localStorage.setItem("sokopulse_user", username);
+              localStorage.setItem("sokopulse_country", country);
+              
+              apiClient.updateIndustry(industry, "USD", undefined, country, true).then(() => {
+                setIsSubmitting(false);
+                toast.success("Account registered and organization seeded!");
+                setShowAuth(false);
+                window.location.reload();
+              });
+            } else {
+              setIsSubmitting(false);
+              toast.success("Account registered! Please log in.");
+              setIsLogin(true);
+            }
+          });
         } else {
+          setIsSubmitting(false);
           toast.error("Registration failed. Try a different username/email.");
         }
       });
@@ -464,17 +483,41 @@ export function AppShell({ children }: { children: ReactNode }) {
               />
             </div>
             {!isLogin && (
-              <div className="space-y-1">
-                <Label htmlFor="auth-email">Email Address</Label>
-                <Input
-                  id="auth-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@sokopulse.ai"
-                  required
-                />
-              </div>
+              <>
+                <div className="space-y-1">
+                  <Label htmlFor="auth-email">Email Address</Label>
+                  <Input
+                    id="auth-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@sokopulse.ai"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="auth-industry">Industry</Label>
+                  <Input
+                    id="auth-industry"
+                    type="text"
+                    value={industry}
+                    onChange={(e) => setIndustry(e.target.value)}
+                    placeholder="e.g. Retail, Electronics, Milk"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="auth-country">Country/Region</Label>
+                  <Input
+                    id="auth-country"
+                    type="text"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    placeholder="e.g. United States, Kenya"
+                    required
+                  />
+                </div>
+              </>
             )}
             <div className="space-y-1">
               <Label htmlFor="auth-password">Password</Label>
