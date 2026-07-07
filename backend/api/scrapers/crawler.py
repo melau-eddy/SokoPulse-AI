@@ -272,6 +272,9 @@ def get_real_competitors_via_ai(industry, currency, country=None):
     import os
     from google import genai
     import json
+    from dotenv import load_dotenv
+    
+    load_dotenv()
 
     if not country:
         country = "Kenya" if currency == "KES" else "United States"
