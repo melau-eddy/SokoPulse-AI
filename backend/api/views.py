@@ -200,14 +200,14 @@ class DashboardKpisView(APIView):
         competitors_tracked = CompetitorData.objects.filter(competitor_name__in=valid_comps).values("competitor_name").distinct().count()
 
         kpis = {
-            "inventoryValue": float(total_inv_value) if total_inv_value > 0 else 4281090,
-            "turnover": 8.4,
-            "stockOutRisk": stock_out_risk if stock_out_risk > 0 else 14,
-            "overstocked": overstocked if overstocked > 0 else 23,
-            "predictedRevenue": 1842000,
-            "aiConfidence": 94.2,
-            "activeSuppliers": active_suppliers if active_suppliers > 0 else 82,
-            "competitorsMonitored": competitors_tracked if competitors_tracked > 0 else 47,
+            "inventoryValue": float(total_inv_value),
+            "turnover": 0.0,
+            "stockOutRisk": stock_out_risk,
+            "overstocked": overstocked,
+            "predictedRevenue": 0.0,
+            "aiConfidence": 0.0,
+            "activeSuppliers": active_suppliers,
+            "competitorsMonitored": competitors_tracked,
         }
         return Response(kpis)
 
@@ -238,25 +238,11 @@ class CompetitorsView(APIView):
             .distinct()
         )
         if not competitor_names:
-            from api.scrapers.crawler import US_COMPETITORS, KENYAN_COMPETITORS
-            if currency == "KES":
-                competitor_names = KENYAN_COMPETITORS.get(industry_name)
-                if not competitor_names:
-                    competitor_names = [
-                        f"{industry_name} East Africa",
-                        f"Kenya {industry_name}",
-                        f"Nairobi {industry_name} Pro",
-                        f"Soko {industry_name}"
-                    ]
-            else:
-                competitor_names = US_COMPETITORS.get(industry_name)
-                if not competitor_names:
-                    competitor_names = [
-                        f"{industry_name} US",
-                        f"American {industry_name}",
-                        f"{industry_name} Pro USA",
-                        f"Apex {industry_name}"
-                    ]
+            return Response({
+                "competitors": [],
+                "competitorPrices": [],
+                "pricingItems": [],
+            })
             
         shares = [28, 19, 14, 11]
         trends = ["up", "flat", "up", "down"]
@@ -385,20 +371,20 @@ class ForecastingView(APIView):
             
         # If db_weeks are all 0, use defaults
         if sum(db_weeks) == 0:
-            db_weeks = [420, 480, 510, 545, 612]
+            db_weeks = [0, 0, 0, 0, 0]
             
         demand_forecast = []
         for i in range(5):
             week_num = i + 1
             actual = db_weeks[i]
             # forecast can be slightly off actual
-            forecast = int(actual * random.uniform(0.95, 1.05))
+            forecast = int(actual * random.uniform(0.95, 1.05)) if actual > 0 else 0
             demand_forecast.append({
                 "week": f"W{week_num}",
                 "actual": actual,
                 "forecast": forecast,
-                "upper": int(forecast * 1.1),
-                "lower": int(forecast * 0.9),
+                "upper": int(forecast * 1.1) if forecast > 0 else 0,
+                "lower": int(forecast * 0.9) if forecast > 0 else 0,
             })
             
         # Predict future weeks W6, W7, W8
@@ -426,7 +412,7 @@ class ForecastingView(APIView):
         for i in range(3):
             week_num = i + 6
             forecast_qty = int(future_weekly_predictions[i])
-            if forecast_qty == 0:
+            if forecast_qty == 0 and db_weeks[-1] > 0:
                 # Fallback if no products/sales
                 last_actual = db_weeks[-1]
                 growth_factor = 1.05 ** (i + 1)
@@ -436,8 +422,8 @@ class ForecastingView(APIView):
                 "week": f"W{week_num}",
                 "actual": 0,
                 "forecast": forecast_qty,
-                "upper": int(forecast_qty * 1.1),
-                "lower": int(forecast_qty * 0.9),
+                "upper": int(forecast_qty * 1.1) if forecast_qty > 0 else 0,
+                "lower": int(forecast_qty * 0.9) if forecast_qty > 0 else 0,
             })
             
         # 2. Monthly sales trend (last 9 months)
@@ -456,17 +442,7 @@ class ForecastingView(APIView):
                 { "month": "Sep", "sales": int(251000 * base_scale), "forecast": int(248000 * base_scale) },
             ]
         else:
-            sales_trend = [
-                { "month": "Jan", "sales": 142000, "forecast": 138000 },
-                { "month": "Feb", "sales": 158000, "forecast": 161000 },
-                { "month": "Mar", "sales": 171000, "forecast": 168000 },
-                { "month": "Apr", "sales": 165000, "forecast": 172000 },
-                { "month": "May", "sales": 189000, "forecast": 184000 },
-                { "month": "Jun", "sales": 204000, "forecast": 198000 },
-                { "month": "Jul", "sales": 221000, "forecast": 218000 },
-                { "month": "Aug", "sales": 238000, "forecast": 235000 },
-                { "month": "Sep", "sales": 251000, "forecast": 248000 },
-            ]
+            sales_trend = []
             
         # Top-growing / slow-moving products
         all_products = list(Product.objects.all())
@@ -491,6 +467,18 @@ class ForecastingView(APIView):
             top_growers = []
             slow_moving = []
         
+        if total_sales_sum == 0:
+            return Response({
+                "accuracy": "0%",
+                "mape": "0%",
+                "confidenceInterval": "±0%",
+                "modelVersion": "v3.2.1",
+                "demandForecast": demand_forecast,
+                "salesTrend": sales_trend,
+                "topGrowers": top_growers,
+                "slowMoving": slow_moving,
+            })
+            
         return Response({
             "accuracy": "94.2%",
             "mape": "5.8%",

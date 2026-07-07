@@ -242,8 +242,8 @@ function PricingPage() {
           />
           <KpiCard
             label="Approval Rate (30d)"
-            value="78%"
-            hint="42 of 54 accepted"
+            value={items.length > 0 ? "78%" : "0%"}
+            hint={items.length > 0 ? "42 of 54 accepted" : "No recent data"}
           />
         </div>
 
