@@ -139,12 +139,12 @@ function CompetitorsPage() {
   });
 
   // KPI Calculations
-  const cheapestCompetitor = simulatedCompetitors.reduce((prev, curr) =>
+  const cheapestCompetitor = simulatedCompetitors.length > 0 ? simulatedCompetitors.reduce((prev, curr) =>
     prev.itemPrice < curr.itemPrice ? prev : curr,
-  );
-  const highestCompetitor = simulatedCompetitors.reduce((prev, curr) =>
+  ) : { name: "N/A", itemPrice: 0 };
+  const highestCompetitor = simulatedCompetitors.length > 0 ? simulatedCompetitors.reduce((prev, curr) =>
     prev.itemPrice > curr.itemPrice ? prev : curr,
-  );
+  ) : { name: "N/A", itemPrice: 0 };
 
   const triggerScrapeRefresh = () => {
     setIsScraping(true);
@@ -301,7 +301,7 @@ function CompetitorsPage() {
                   {formatPrice(c.itemPrice)}
                 </span>
                 <span className="text-[10px] text-muted-foreground ml-1.5">
-                  for {activeProduct.product}
+                  for {activeProduct ? activeProduct.product : 'Awaiting Data'}
                 </span>
               </div>
               <div className="flex items-center justify-between border-t border-border/55 pt-3 mt-1">
@@ -323,7 +323,7 @@ function CompetitorsPage() {
 
         {/* Chart */}
         <SectionCard
-          title={`Price Movements Comparison — ${activeProduct.product}`}
+          title={`Price Movements Comparison — ${activeProduct ? activeProduct.product : 'Awaiting Data'}`}
           description="Last 7 days · daily crawler benchmark snapshots"
           className="mb-6"
         >
@@ -333,7 +333,7 @@ function CompetitorsPage() {
         {/* Comparison Table */}
         <SectionCard
           title="Product Comparative Price Matrix"
-          description={`Competitor pricing audit matrix for ${activeProduct.product}`}
+          description={`Competitor pricing audit matrix for ${activeProduct ? activeProduct.product : 'Awaiting Data'}`}
         >
           <Table>
             <TableHeader>
