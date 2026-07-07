@@ -473,10 +473,10 @@ class ForecastingView(APIView):
                 "mape": "0%",
                 "confidenceInterval": "±0%",
                 "modelVersion": "v3.2.1",
-                "demandForecast": demand_forecast,
-                "salesTrend": sales_trend,
-                "topGrowers": top_growers,
-                "slowMoving": slow_moving,
+                "demandForecast": [],
+                "salesTrend": [],
+                "topGrowers": [],
+                "slowMoving": [],
             })
             
         return Response({
