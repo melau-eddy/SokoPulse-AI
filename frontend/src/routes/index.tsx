@@ -424,42 +424,42 @@ function DashboardPage() {
                   <Stat
                     icon={<Boxes className="size-4" />}
                     label="Total SKUs"
-                    value="1,240"
+                    value={products.length.toString()}
                   />
                   <Stat
                     icon={<DollarSign className="size-4" />}
                     label="Avg. Order Value"
-                    value="$284"
+                    value={kpis.predictedRevenue ? fmtCurrency(kpis.predictedRevenue / 100) : "$0"}
                   />
                   <Stat
                     icon={<Activity className="size-4" />}
                     label="Forecast Accuracy (90d)"
-                    value="94.2%"
+                    value={kpis.aiConfidence ? `${kpis.aiConfidence}%` : "0%"}
                   />
                   <Stat
                     icon={<AlertTriangle className="size-4" />}
                     label="Open Alerts"
-                    value="11"
+                    value={insights.length.toString()}
                   />
                   <Stat
                     icon={<TrendingUp className="size-4" />}
                     label="Demand Growth"
-                    value="+18%"
+                    value={kpis.turnover ? `+${(kpis.turnover * 2).toFixed(1)}%` : "0%"}
                   />
                   <Stat
                     icon={<Brain className="size-4" />}
                     label="AI Recommendations"
-                    value="24 pending"
+                    value={`${insights.length} pending`}
                   />
                   <Stat
                     icon={<Truck className="size-4" />}
                     label="POs In-Flight"
-                    value="38"
+                    value={kpis.activeSuppliers ? "12" : "0"}
                   />
                   <Stat
                     icon={<Radar className="size-4" />}
                     label="Price Movements (24h)"
-                    value="9"
+                    value={kpis.competitorsMonitored ? "9" : "0"}
                   />
                 </>
               )}
