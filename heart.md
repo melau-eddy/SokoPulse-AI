@@ -2,6 +2,9 @@
 
 This file maintains the architecture, dependencies, and history of the project for agent continuity.
 
+## 🚫 Critical Project Restrictions
+*   **Term Banned:** Do **not** use the word "inventory" (case-insensitive) in any project proposals, reports, documentation, or client-facing text, as it will lead to academic rejection. Instead, use terms like "stock", "goods", "supply tracking", or "product tracking".
+
 ## 🏗️ Project Architecture & Structure
 - **Backend:** Python (Django 6.x, Django REST Framework, Celery background tasks, Redis broker, PostgreSQL/SQLite).
 - **Frontend:** TypeScript React (Vite, TanStack Start / file-based routing, TailwindCSS, Recharts).
@@ -22,6 +25,10 @@ This file maintains the architecture, dependencies, and history of the project f
 ---
 
 ## 🕒 Session Log
+
+### [2026-06-17] - Project Proposal Draft & Session Policy
+- **Academic Proposal Written:** Created and finalized the official 10-chapter academic proposal for SokoPulse, saved at [proposal.md](file:///home/melau/Desktop/SokoPulse/proposal.md). The content is fully aligned with the benchmark specifications of [presentation_prep_guide.md](file:///home/melau/.gemini/antigravity-cli/brain/5a4060b4-c904-41b4-8f18-89a558399233/presentation_prep_guide.md) (Random Forest Classifier/Regressor pipeline, Database Tap, concurrent scraping, and fallback systems).
+- **Session Policy:** Established automated logging of all edits, tasks, and progress to `heart.md` files at the end of each session.
 
 ### [2026-06-12] - ML Forecasting & Database Tap Connector Upgrades
 - **Competitor Scraper Performance & Resiliency:**

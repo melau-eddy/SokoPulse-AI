@@ -77,6 +77,12 @@ function SettingsPage() {
     }
     return "Industrial Distribution";
   });
+  const [country, setCountry] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sokopulse_country") || "United States";
+    }
+    return "United States";
+  });
   const [currency, setCurrency] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("sokopulse_currency") || "USD";
@@ -214,6 +220,14 @@ function SettingsPage() {
               />
             </div>
             <div className="grid gap-1.5 mt-4">
+              <Label htmlFor="org-country">Region (Country)</Label>
+              <Input
+                id="org-country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5 mt-4">
               <Label htmlFor="org-currency">Default currency</Label>
               <Select
                 value={currency}
@@ -243,6 +257,7 @@ function SettingsPage() {
                   setIsSavingOrg(true);
                   localStorage.setItem("sokopulse_org", orgName);
                   localStorage.setItem("sokopulse_industry", industry);
+                  localStorage.setItem("sokopulse_country", country);
                   localStorage.setItem("sokopulse_currency", currency);
                   localStorage.setItem("sokopulse_timezone", timezone);
                   window.dispatchEvent(new Event("currency-updated"));
@@ -266,7 +281,7 @@ function SettingsPage() {
                     : undefined;
 
                   apiClient
-                    .updateIndustry(industry, currency, competitorNames)
+                    .updateIndustry(industry, currency, competitorNames, country)
                     .then((res) => {
                       setIsSavingOrg(false);
                       if (res) {

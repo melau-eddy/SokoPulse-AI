@@ -100,6 +100,7 @@ export const apiClient = {
         industry,
         currency: actualCurrency,
         competitors: actualCompetitors,
+        country: typeof window !== "undefined" ? localStorage.getItem("sokopulse_country") : undefined,
       }),
     });
   },
@@ -151,10 +152,10 @@ export const apiClient = {
     }),
 
   // Settings
-  updateIndustry: async (industry: string, currency: string, competitors?: string[]) =>
+  updateIndustry: async (industry: string, currency: string, competitors?: string[], country?: string) =>
     safeFetch<any>("/settings/industry/", {
       method: "POST",
-      body: JSON.stringify({ industry, currency, competitors }),
+      body: JSON.stringify({ industry, currency, competitors, country }),
     }),
 
   // Database Sync/Tap Integration

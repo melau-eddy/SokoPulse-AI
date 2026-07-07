@@ -1,10 +1,12 @@
 import os
-import google.generativeai as genai
+from google import genai
 
 # Configure Google Gemini API
 api_key = os.getenv("GEMINI_API_KEY", "")
 if api_key:
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
+else:
+    client = None
 
 
 def explain_replenishment(product_name, sku, current_stock, reorder_point, recommended_qty, cost, reason, supplier):
@@ -21,7 +23,6 @@ def explain_replenishment(product_name, sku, current_stock, reorder_point, recom
         )
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
         prompt = (
             f"You are SokoPulse AI, an intelligent supply chain optimization engine. "
             f"Explain to a warehouse operations manager why they should approve the following purchase order recommendation:\n"
@@ -34,7 +35,10 @@ def explain_replenishment(product_name, sku, current_stock, reorder_point, recom
             f"- Operational Trigger Reason: {reason}\n\n"
             f"Write a concise (2-3 sentences), professional explanation emphasizing lead time safety, cost efficiency, and stockout prevention."
         )
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt
+        )
         return response.text.strip()
     except Exception as e:
         print(f"⚠️ Gemini API explanation generation failed: {e}")

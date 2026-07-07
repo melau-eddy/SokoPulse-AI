@@ -351,6 +351,7 @@ class CompetitorsView(APIView):
 
             competitors = request.data.get("competitors")
             currency = request.data.get("currency")
+            country = request.data.get("country")
 
             # Persist industry setting locally to survive periodic celery beat tasks
             if industry_name:
@@ -372,7 +373,17 @@ class CompetitorsView(APIView):
                 except Exception as e:
                     print(f"⚠️ Failed to save currency setting to file: {e}")
 
-            scrape_competitors_task.delay(industry=industry_name, currency=currency, competitors=competitors)
+            # Persist country setting locally to survive periodic celery beat tasks
+            if country:
+                try:
+                    import os
+                    file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "country_setting.txt")
+                    with open(file_path, "w") as f:
+                        f.write(country.strip())
+                except Exception as e:
+                    print(f"⚠️ Failed to save country setting to file: {e}")
+
+            scrape_competitors_task.delay(industry=industry_name, currency=currency, competitors=competitors, country=country)
             return self.get(request)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -715,6 +726,7 @@ class SettingsIndustryView(APIView):
             industry_name = request.data.get("industry")
             competitors = request.data.get("competitors")
             currency = request.data.get("currency")
+            country = request.data.get("country")
             if not industry_name:
                 return Response({"error": "Industry name is required"}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -738,10 +750,20 @@ class SettingsIndustryView(APIView):
                 except Exception as e:
                     print(f"⚠️ Failed to save currency setting to file: {e}")
 
+            # Persist country setting locally to survive periodic celery beat tasks
+            if country:
+                try:
+                    import os
+                    file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "country_setting.txt")
+                    with open(file_path, "w") as f:
+                        f.write(country.strip())
+                except Exception as e:
+                    print(f"⚠️ Failed to save country setting to file: {e}")
+
             print(f"🔄 Setting industry updated to {industry_name}. Wiping and re-seeding database...")
             seed_for_industry(industry_name)
             run_intelligence_pipeline()
-            scrape_competitors_task.delay(industry=industry_name, currency=currency, competitors=competitors)
+            scrape_competitors_task.delay(industry=industry_name, currency=currency, competitors=competitors, country=country)
             
             return Response({
                 "status": "success",

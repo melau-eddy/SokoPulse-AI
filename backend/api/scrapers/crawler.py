@@ -28,7 +28,7 @@ KENYAN_COMPETITORS = {
 }
 
 
-def scrape_competitor_prices(industry=None, competitors=None, currency=None):
+def scrape_competitor_prices(industry=None, competitors=None, currency=None, country=None):
     """
     Phase 6: Competitor Intelligence Module.
     Scrapes competitor web catalogs or generates normalized benchmarks for each product.
@@ -84,10 +84,20 @@ def scrape_competitor_prices(industry=None, competitors=None, currency=None):
         if not currency:
             currency = "USD"
 
+    # Fallback to read country from file if not passed
+    if not country:
+        try:
+            file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "country_setting.txt")
+            if os.path.exists(file_path):
+                with open(file_path, "r") as f:
+                    country = f.read().strip()
+        except Exception as e:
+            print(f"⚠️ Failed to read country settings file: {e}")
+
     if not competitors:
         try:
             from api.utils.dynamic_seeder import get_crawler_competitors
-            competitors = get_crawler_competitors(industry_key, currency)
+            competitors = get_crawler_competitors(industry_key, currency, country)
         except Exception as e:
             print(f"⚠️ Failed to get crawler competitors dynamically: {e}")
 
@@ -254,27 +264,30 @@ def scrape_competitor_prices(industry=None, competitors=None, currency=None):
     print(f"🕸️ Competitor Scraping task completed ({currency}). Saved {observations_created} pricing observations.")
 
 
-def get_real_competitors_via_ai(industry, currency):
+def get_real_competitors_via_ai(industry, currency, country=None):
     """
     Attempts to fetch 4 real-world competitor names for the given industry and currency using Gemini.
     Falls back to a DuckDuckGo web scraper if Gemini is not available or fails.
     """
     import os
-    import google.generativeai as genai
+    from google import genai
     import json
 
-    country = "Kenya" if currency == "KES" else "United States"
+    if not country:
+        country = "Kenya" if currency == "KES" else "United States"
     api_key = os.getenv("GEMINI_API_KEY", "")
     
     if api_key:
         try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            client = genai.Client(api_key=api_key)
             prompt = (
                 f"Identify the top 4 real-world competitor companies/brands in the '{industry}' industry in {country}.\n"
                 f"Return only a JSON list of strings containing exactly 4 company names, with no other text, e.g. [\"Name 1\", \"Name 2\", \"Name 3\", \"Name 4\"]."
             )
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=prompt
+            )
             text = response.text.strip()
             if "```" in text:
                 text = text.split("```json")[-1].split("```")[0].strip()

@@ -331,7 +331,7 @@ def get_active_industry():
     return "Industrial"
 
 
-def get_crawler_competitors(industry_name, currency):
+def get_crawler_competitors(industry_name, currency, country=None):
     """Helper to get the list of 4 real/crawled competitors for a given industry and currency."""
     from api.scrapers.crawler import US_COMPETITORS, KENYAN_COMPETITORS, get_real_competitors_via_ai
     normalized = str(industry_name).strip().title()
@@ -340,17 +340,17 @@ def get_crawler_competitors(industry_name, currency):
     else:
         comps = US_COMPETITORS.get(normalized)
     if not comps:
-        comps = get_real_competitors_via_ai(normalized, currency)
+        comps = get_real_competitors_via_ai(normalized, currency, country)
     return comps
 
 
-def get_valid_competitors(industry_name=None, currency=None):
+def get_valid_competitors(industry_name=None, currency=None, country=None):
     """Returns the set of valid competitor names for the active or given industry/currency."""
     if not industry_name:
         industry_name = get_active_industry()
 
+    import os
     if not currency:
-        import os
         try:
             base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             file_path = os.path.join(base_dir, "currency_setting.txt")
@@ -361,6 +361,16 @@ def get_valid_competitors(industry_name=None, currency=None):
             pass
         if not currency:
             currency = "USD"
+
+    if not country:
+        try:
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            file_path = os.path.join(base_dir, "country_setting.txt")
+            if os.path.exists(file_path):
+                with open(file_path, "r") as f:
+                    country = f.read().strip()
+        except Exception:
+            pass
 
     from api.scrapers.crawler import US_COMPETITORS, KENYAN_COMPETITORS, get_real_competitors_via_ai
     normalized = str(industry_name).strip().title()
@@ -373,7 +383,7 @@ def get_valid_competitors(industry_name=None, currency=None):
 
     # Dynamic lookup for custom industries
     if not competitors:
-        competitors = get_real_competitors_via_ai(normalized, currency)
+        competitors = get_real_competitors_via_ai(normalized, currency, country)
 
     # Add seeder fallback names to allow both during transitional states
     seeder_names = [
