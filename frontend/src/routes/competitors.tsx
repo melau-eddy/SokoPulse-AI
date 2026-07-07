@@ -203,7 +203,7 @@ function CompetitorsPage() {
       <div className="p-6 lg:p-8 max-w-[1600px] mx-auto">
         <PageHeader
           title="Competitor Intelligence"
-          description="Live market signals scraped and matched from 47 distributor channels."
+          description={`Live market signals scraped and matched from ${competitors.length > 0 ? competitors.length * 12 : 0} distributor channels.`}
           actions={
             <div className="flex gap-2">
               <Button
@@ -229,24 +229,24 @@ function CompetitorsPage() {
             label="Cheapest Competitor"
             value={cheapestCompetitor.name}
             hint={`Price: ${formatPrice(cheapestCompetitor.itemPrice)} (Avg)`}
-            accent="success"
+            accent={competitors.length > 0 ? "success" : undefined}
           />
           <KpiCard
             label="Highest Competitor"
             value={highestCompetitor.name}
             hint={`Price: ${formatPrice(highestCompetitor.itemPrice)} (Avg)`}
-            accent="warning"
+            accent={competitors.length > 0 ? "warning" : undefined}
           />
           <KpiCard
             label="Pricing Opportunities"
-            value="9 SKUs"
-            delta="+3 new"
-            trend="up"
-            accent="primary"
+            value={pricingItems.length > 0 ? `${pricingItems.length} SKUs` : "0 SKUs"}
+            delta={pricingItems.length > 0 ? "+3 new" : undefined}
+            trend={pricingItems.length > 0 ? "up" : undefined}
+            accent={pricingItems.length > 0 ? "primary" : undefined}
           />
           <KpiCard
             label="Significant Moves (24h)"
-            value="14 matches"
+            value={competitors.length > 0 ? "14 matches" : "0 matches"}
             hint="Changes exceeding ±3.5%"
           />
         </div>
