@@ -245,10 +245,10 @@ function AlertsPage() {
         />
         <KpiCard
           label="Resolved (7d)"
-          value="48"
-          delta="+12"
-          trend="up"
-          accent="success"
+          value={`${data.filter((a) => a.resolved).length}`}
+          delta={data.filter((a) => a.resolved).length > 0 ? "+12" : undefined}
+          trend={data.filter((a) => a.resolved).length > 0 ? "up" : undefined}
+          accent={data.filter((a) => a.resolved).length > 0 ? "success" : undefined}
         />
       </div>
 
